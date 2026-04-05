@@ -4,7 +4,7 @@
 const CONFIG = {
     SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbymRy-M5v0fVLWUjw4IXYhd1oIR2ZvnP_Dzr_iGR-Th0cMIpmE2ntGeujWYH7-C6NHIzA/exec',
     SHEET_URL:  'https://docs.google.com/spreadsheets/d/1cXlYiTMzcRP1BCj9mt1JXoK_pjgWbRtDEEQUPMg2HPs/edit?usp=sharing',
-    CSV_FILE:   'cascading_data.csv',
+    CSV_FILE:   'cascading_data1.csv',
     ADMIN_USER: 'admin',
     ADMIN_PASS: 'admin123'
 };
@@ -386,21 +386,42 @@ function loadLocationData() {
                 buildUserMap(results.data);
 
                 let loaded = 0, skipped = 0;
-                results.data.forEach(row => {
+                const _seenKeys  = new Set();    // full 5-part keys seen so far
+                const _dupRows   = [];           // duplicate rows found
+                window.CSV_DUPLICATES = [];      // expose for ai_agent.js Targets tab
+
+                results.data.forEach((row, rowIdx) => {
                     const d   = csvCol(row, 'District',    'adm1');
                     const c   = csvCol(row, 'Chiefdom',    'adm2');
                     const fac = csvCol(row, 'Name of PHU', 'hf', 'adm3');
                     const com = csvCol(row, 'Community',   'community');
                     const sch = csvCol(row, 'School Name', 'school_name');
                     if (!d || !c || !fac || !com || !sch) { skipped++; return; }
+
+                    // Full 5-part uniqueness key
+                    const fullKey = [d,c,fac,com,sch].map(v=>v.trim().toLowerCase()).join('|');
+
+                    if (_seenKeys.has(fullKey)) {
+                        // Duplicate — record it but do NOT add to location data again
+                        _dupRows.push({ row: rowIdx + 2, district: d, chiefdom: c, phu: fac, community: com, school: sch, key: fullKey });
+                        return;
+                    }
+                    _seenKeys.add(fullKey);
+
                     if (!ALL_LOCATION_DATA[d]) ALL_LOCATION_DATA[d]={};
                     if (!ALL_LOCATION_DATA[d][c]) ALL_LOCATION_DATA[d][c]={};
                     if (!ALL_LOCATION_DATA[d][c][fac]) ALL_LOCATION_DATA[d][c][fac]={};
                     if (!ALL_LOCATION_DATA[d][c][fac][com]) ALL_LOCATION_DATA[d][c][fac][com]=[];
-                    if (!ALL_LOCATION_DATA[d][c][fac][com].includes(sch))
-                        ALL_LOCATION_DATA[d][c][fac][com].push(sch);
+                    ALL_LOCATION_DATA[d][c][fac][com].push(sch);
                     loaded++;
                 });
+
+                // Expose duplicates for the Targets tab warning
+                window.CSV_DUPLICATES = _dupRows;
+                if (_dupRows.length > 0) {
+                    console.warn(`[CSV] ${_dupRows.length} duplicate row(s) found and skipped:`);
+                    _dupRows.forEach(r => console.warn(`  Row ${r.row}: ${r.district} > ${r.chiefdom} > ${r.phu} > ${r.community} > ${r.school}`));
+                }
 
                 for (const d in ALL_LOCATION_DATA) for (const c in ALL_LOCATION_DATA[d])
                     for (const fac in ALL_LOCATION_DATA[d][c])
