@@ -24,6 +24,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -370,6 +371,31 @@
 </head>
 <body>
 
+<!-- ══════════════════════════════════════════ -->
+<!-- APP LOCK SCREEN                           -->
+<!-- ══════════════════════════════════════════ -->
+<div id="appLockScreen">
+    <div class="lock-card">
+        <div class="lock-logo">
+            <img src="ICF-SL.jpg" alt="ICF-SL"
+                 onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23004080%22/><text x=%2212%22 y=%2265%22 fill=%22%23ffc107%22 font-size=%2226%22 font-weight=%22bold%22>ICF</text></svg>'">
+        </div>
+        <div class="lock-title">SBD 2026</div>
+        <div class="lock-divider"></div>
+        <div class="lock-sub">School-Based ITN Distribution</div>
+        <input type="password" class="lock-input" id="lockInput" 
+               placeholder="Enter app password"
+               autocomplete="off" autocapitalize="none"
+               onkeydown="if(event.key==='Enter') window.unlockApp()">
+        <button class="lock-btn" onclick="window.unlockApp()">
+            🔓 UNLOCK
+        </button>
+        <div class="lock-err" id="lockErr">Incorrect password. Try again.</div>
+        <div style="margin-top:16px;font-size:.7rem;color:#aaa;">ICF-Sierra Leone · NMCP · 2026</div>
+    </div>
+</div>
+
+
     <!-- login screen stub (required by script_option2.js internals) -->
     <div id="loginScreen" style="display:none;">
         <input type="hidden" id="loginUsername" value="admin">
@@ -485,6 +511,55 @@
                 <!-- FORM CONTENT -->
                 <div id="mainFormWrap">
 
+                    <!-- ══ DATA ENTRY SUB-TABS ══ -->
+                    <div id="dataEntrySubTabs" style="display:none;background:linear-gradient(135deg,#1d7a1d,#2ca02c);padding:8px 14px;display:flex;gap:8px;align-items:center;border-bottom:3px solid #ffc107;">
+                        <div style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.5px;text-transform:uppercase;margin-right:4px;">DATA ENTRY</div>
+                        <button class="de-subtab active" data-tab="tool" onclick="showDataEntrySubTab('tool')"
+                            style="background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:6px;padding:5px 14px;font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
+                            🛠 TOOL
+                        </button>
+                        <button class="de-subtab" data-tab="video" onclick="showDataEntrySubTab('video')"
+                            style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);border-radius:6px;padding:5px 14px;font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
+                            🎬 VIDEO
+                        </button>
+                        <button class="de-subtab" data-tab="ppt" onclick="showDataEntrySubTab('ppt')"
+                            style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);border-radius:6px;padding:5px 14px;font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
+                            📊 PPT
+                        </button>
+                    </div>
+
+                    <!-- Data Entry Video Panel -->
+                    <div id="de-panel-video" style="display:none;min-height:400px;padding:20px;background:#fff;flex-direction:column;gap:12px;">
+                        <div style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:#004080;text-transform:uppercase;letter-spacing:.5px;">📹 Training Video — Data Entry</div>
+                        <div id="de-video-content" style="flex:1;">
+                            <div id="de-video-player" style="display:none;">
+                                <video id="de-video-el" controls style="width:100%;border-radius:10px;border:2px solid #dde3ee;background:#000;max-height:70vh;">
+                                    <source id="de-video-src" src="" type="video/mp4">Your browser does not support video.
+                                </video>
+                            </div>
+                            <div id="de-video-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;gap:12px;">
+                                <div style="width:72px;height:72px;background:#f0f4f8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;">🎬</div>
+                                <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#004080;">No Training Video Yet</div>
+                                <div style="font-size:12px;color:#888;">Upload a .mp4 file and set the path in MODULE_RESOURCES.dataentry.video</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Entry PPT Panel -->
+                    <div id="de-panel-ppt" style="display:none;min-height:400px;padding:20px;background:#fff;flex-direction:column;gap:12px;">
+                        <div style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:#004080;text-transform:uppercase;letter-spacing:.5px;">📊 Presentation — Data Entry</div>
+                        <div id="de-ppt-content" style="flex:1;min-height:500px;">
+                            <div id="de-ppt-frame" style="display:none;width:100%;min-height:500px;">
+                                <iframe id="de-ppt-el" src="" style="width:100%;height:500px;border-radius:10px;border:2px solid #dde3ee;" allowfullscreen></iframe>
+                            </div>
+                            <div id="de-ppt-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;gap:12px;">
+                                <div style="width:72px;height:72px;background:#f0f4f8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;">📊</div>
+                                <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#004080;">No Presentation Yet</div>
+                                <div style="font-size:12px;color:#888;">Upload a .pdf or .pptx and set the path in MODULE_RESOURCES.dataentry.ppt</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- ══ UNIFIED TAB STRIP ══ -->
                     <style>
                     /* Reset any old controls-bar / control-btn / module-btn styles */
@@ -568,7 +643,7 @@
                     <div class="controls-bar">
 
                         <!-- ── DATA ENTRY — first tab, scrolls to form ── -->
-                        <button class="app-tab" style="background:linear-gradient(145deg,#2ca02c,#1d7a1d);" onclick="window.scrollTo({top:document.getElementById('mainFormWrap')?.offsetTop-10||0,behavior:'smooth'})" title="Data Entry Form">
+                        <button class="app-tab" style="background:linear-gradient(145deg,#2ca02c,#1d7a1d);" onclick="showDataEntrySubTab('tool');window.scrollTo({top:document.getElementById('mainFormWrap')?.offsetTop-10||0,behavior:'smooth'})" title="Data Entry Form">
                             <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             DATA ENTRY
                         </button>
@@ -648,6 +723,7 @@
                         </button>
 
                         <!-- ── UPDATE — always last ── -->
+
                         <button class="app-tab t10-gray" id="updateAppBtn" onclick="updateApp()" title="Check for Updates">
                             <svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115.36-6.36L21 8M3 22v-6h6M21 12a9 9 0 01-15.36 6.36L3 16"/></svg>
                             UPDATE
@@ -696,6 +772,7 @@
                         monitoring:     'admin123',   // MONITORING
                         reconciliation: 'admin123',   // ITN RECONCILIATION
                         device:         'admin123',   // DEVICES
+                        dataentry:      'sbd2026',    // DATA ENTRY LOCK
                         movement:       'admin123',   // ITN MOVEMENT
                         itnreceived:    'admin123',   // ITN RECEIVED
                         attendance:     'admin123',   // ATTENDANCE & PAYMENT
@@ -712,6 +789,7 @@
                         monitoring:     'Monitoring Module',
                         reconciliation: 'ITN Reconciliation Module',
                         device:         'Device Tracking Module',
+                        dataentry:      'Data Entry — Distributor Access',
                         movement:       'ITN Movement Module',
                         itnreceived:    'ITN Received Module',
                         attendance:     'Attendance & Payment Module',
@@ -775,6 +853,7 @@
                         else if (action === 'summary')   { window.openSummaryModal && window.openSummaryModal(); }
                         else if (action === 'ai')        { window.icfAiOpen && window.icfAiOpen(); }
                         // Module tabs
+                        else if (action === 'dataentry') { window.nextSection && window.nextSection(); }
                         else { window.openModule && window.openModule(action); }
                     }
                     </script>
@@ -799,6 +878,7 @@
                                 <input type="hidden" name="draft_id" id="draft_id" value="">
                                 <input type="hidden" name="timestamp" id="timestamp" value="">
                                 <input type="hidden" name="submitted_by" id="submitted_by" value="">
+                                <input type="hidden" name="is_new_school" id="is_new_school" value="No">
 
                                 <!-- SECTION 1: INTRODUCTION -->
                                 <div class="form-section active" data-section="1">
@@ -819,21 +899,82 @@
                                         </div>
                                         <div class="intro-instructions"><svg class="instructions-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><div><strong>Instructions:</strong> Complete all sections accurately. Fields marked with <span class="required">*</span> are mandatory. You can save drafts anytime and submit when ready.</div></div>
                                     </div>
-                                    <div class="navigation-buttons"><button type="button" class="btn-nav btn-next full-width" onclick="nextSection()">START SURVEY <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button></div>
+                                    <div class="navigation-buttons"><button type="button" class="btn-nav btn-next full-width" onclick="window.guardedAction('dataentry')">🔒 START SURVEY <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button></div>
                                 </div>
 
                                 <!-- SECTION 2: SCHOOL PROFILE -->
                                 <div class="form-section" data-section="2">
                                     <div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><div><h2 class="section-title">SECTION B: SCHOOL PROFILE</h2><p class="section-description">School identification and location details</p></div></div>
+                                    <!-- QR Scan to auto-fill school -->
+                                    <div style="background:linear-gradient(135deg,#002952,#004080);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+                                        <div style="background:rgba(255,255,255,.1);border-radius:8px;padding:8px;flex-shrink:0;">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="2" width="22" height="22"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M17 14v3M14 17h3"/></svg>
+                                        </div>
+                                        <div style="flex:1;">
+                                            <div style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;color:#fff;letter-spacing:.5px;">SCAN SCHOOL QR CODE</div>
+                                            <div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:2px;">Auto-fills location and school fields</div>
+                                        </div>
+                                        <button type="button" onclick="window.startSchoolQRScan()" id="qrScanBtn"
+                                            style="background:#ffc107;color:#004080;border:none;border-radius:8px;padding:9px 16px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;white-space:nowrap;touch-action:manipulation;">
+                                            📷 SCAN QR
+                                        </button>
+                                    </div>
+                                    <!-- QR scanner container -->
+                                    <div id="schoolQRScannerWrap" style="display:none;margin-bottom:12px;">
+                                        <div style="border:2px solid #004080;border-radius:10px;overflow:hidden;position:relative;">
+                                            <div id="schoolQRReader" style="width:100%;"></div>
+                                            <button type="button" onclick="window.stopSchoolQRScan()"
+                                                style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+                                        </div>
+                                    </div>
+                                    <!-- QR filled banner -->
+                                    <div id="qrFilledBanner" style="display:none;background:#e8f5ee;border:2px solid #1a7a3c;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:none;align-items:center;gap:8px;">
+                                        <span style="font-size:18px;">✅</span>
+                                        <div>
+                                            <div style="font-size:12px;font-weight:700;color:#1a7a3c;">School auto-filled from QR</div>
+                                            <div style="font-size:11px;color:#555;" id="qrFilledSchoolName">—</div>
+                                        </div>
+                                        <button type="button" onclick="window.clearQRFill()" style="margin-left:auto;background:none;border:1px solid #1a7a3c;color:#1a7a3c;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;font-family:'Oswald',sans-serif;">CLEAR</button>
+                                    </div>
 
                                     <div class="form-group"><label class="form-label">DISTRICT <span class="required">*</span></label><select class="form-select" name="district" id="district" required><option value="">Select District...</option></select><div class="cascade-count" id="count_district"></div><div class="field-error" id="error_district">Please select a district</div></div>
                                     <div class="form-group"><label class="form-label">CHIEFDOM <span class="required">*</span></label><select class="form-select" name="chiefdom" id="chiefdom" required disabled><option value="">Select Chiefdom...</option></select><div class="cascade-count" id="count_chiefdom"></div><div class="field-error" id="error_chiefdom">Please select a chiefdom</div></div>
                                     <div class="form-group" id="section_loc_group" style="display:none;"><label class="form-label">SECTION</label><select class="form-select" name="section_loc" id="section_loc" disabled><option value="">Select Section...</option></select><div class="cascade-count" id="count_section_loc"></div><div class="field-error" id="error_section_loc">Please select a section</div></div>
                                     <div class="form-group"><label class="form-label">NEAREST HEALTH FACILITY <span class="required">*</span></label><select class="form-select" name="facility" id="facility" required disabled><option value="">Select Health Facility...</option></select><div class="cascade-count" id="count_facility"></div><div class="field-error" id="error_facility">Please select a facility</div></div>
                                     <div class="form-group"><label class="form-label">COMMUNITY / TOWN / VILLAGE <span class="required">*</span></label><select class="form-select" name="community" id="community" required disabled><option value="">Select Community...</option></select><div class="cascade-count" id="count_community"></div><div class="field-error" id="error_community">Please select a community</div></div>
-                                    <div class="form-group"><label class="form-label">SCHOOL NAME <span class="required">*</span></label><select class="form-select" name="school_name" id="school_name" required disabled><option value="">Select School...</option></select><div class="cascade-count" id="count_school_name"></div><div class="field-error" id="error_school_name">Please select a school</div></div>
+                                    <div class="form-group">
+                                        <label class="form-label">SCHOOL NAME <span class="required">*</span></label>
+                                        <select class="form-select" name="school_name" id="school_name" required disabled><option value="">Select School...</option></select>
+                                        <div class="cascade-count" id="count_school_name"></div>
+                                        <div class="field-error" id="error_school_name">Please select a school</div>
+                                        <!-- Add new school not in list -->
+                                        <div style="margin-top:8px;">
+                                            <button type="button" id="addNewSchoolBtn"
+                                                onclick="window.toggleNewSchoolInput()"
+                                                style="background:none;border:1px dashed #004080;color:#004080;border-radius:7px;padding:5px 12px;font-family:'Oswald',sans-serif;font-size:10px;font-weight:600;cursor:pointer;letter-spacing:.4px;display:none;">
+                                                ➕ ADD NEW SCHOOL (not in list)
+                                            </button>
+                                        </div>
+                                        <div id="newSchoolInputWrap" style="display:none;margin-top:8px;">
+                                            <div style="background:#fff8e1;border:2px solid #ffc107;border-radius:9px;padding:12px;">
+                                                <div style="font-size:10px;font-weight:700;color:#8a6500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+                                                    ⭐ NEW SCHOOL — Not in target list
+                                                </div>
+                                                <input type="text" id="newSchoolName"
+                                                    class="form-input"
+                                                    placeholder="Enter exact school name"
+                                                    style="border-color:#ffc107;"
+                                                    oninput="window.updateNewSchoolName(this.value)">
+                                                <div style="font-size:10px;color:#888;margin-top:5px;">
+                                                    This school will appear in targets with a ⭐ new-school marker. The target count will not change.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="form-group"><label class="form-label">HEAD TEACHER NAME <span class="required">*</span></label><input type="text" class="form-input name-field" name="head_teacher" id="head_teacher" required><div class="field-error" id="error_head_teacher">Name must contain only letters</div></div>
                                     <div class="form-group"><label class="form-label">HEAD TEACHER PHONE <span class="required">*</span></label><input type="tel" class="form-input" name="head_teacher_phone" id="head_teacher_phone" required pattern="[0-9]{9}" maxlength="9"><div class="field-hint">Enter 9-digit phone number</div><div class="field-error" id="error_head_teacher_phone">Please enter a valid 9-digit phone number</div></div>
+                                    <div class="form-group"><label class="form-label">EMIS NUMBER</label><input type="text" class="form-input" name="emis_number" id="emis_number" placeholder="e.g. 12345"><div class="field-hint">School EMIS code (auto-filled from QR if available)</div></div>
+                                    <div class="form-group"><label class="form-label">SCHOOL STATUS</label><select class="form-input" name="school_status" id="school_status"><option value="">Select...</option><option value="Old">Old</option><option value="New">New</option></select><div class="field-hint">Auto-filled from QR if available</div></div>
                                     <div class="form-group"><label class="form-label">DATE OF DISTRIBUTION <span class="required">*</span></label><input type="date" class="form-input" name="distribution_date" id="distribution_date" required><div class="field-error" id="error_distribution_date">This field is required</div></div>
 
                                     <div class="navigation-buttons">
@@ -874,7 +1015,7 @@
                                         <div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 1</div>
                                         <div class="teacher-row">
                                             <div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c1_teacher_name" id="c1_teacher_name" required></div>
-                                            <div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c1_teacher_phone" id="c1_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c1_teacher_phone">Enter 9-digit number</div></div>
+                                            <div class="form-group"><label class="form-label">Teacher Phone <span style="font-size:9px;color:#888;">(Optional)</span></label><input type="tel" class="form-input phone-field" name="c1_teacher_phone" id="c1_teacher_phone" pattern="[0-9]{9}" maxlength="9" placeholder="9 digits (optional)"><div class="field-error" id="error_c1_teacher_phone">Enter 9-digit number if provided</div></div>
                                         </div>
                                         <div class="class-grid">
                                             <div class="form-group"><label class="form-label">Number of Boys in Class 1 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c1_boys" id="c1_boys" min="0" placeholder="0" required data-class="1" data-gender="boys"></div>
@@ -888,7 +1029,7 @@
                                         <div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 2</div>
                                         <div class="teacher-row">
                                             <div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c2_teacher_name" id="c2_teacher_name" required></div>
-                                            <div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c2_teacher_phone" id="c2_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c2_teacher_phone">Enter 9-digit number</div></div>
+                                            <div class="form-group"><label class="form-label">Teacher Phone <span style="font-size:9px;color:#888;">(Optional)</span></label><input type="tel" class="form-input phone-field" name="c2_teacher_phone" id="c2_teacher_phone" pattern="[0-9]{9}" maxlength="9" placeholder="9 digits (optional)"><div class="field-error" id="error_c2_teacher_phone">Enter 9-digit number if provided</div></div>
                                         </div>
                                         <div class="class-grid">
                                             <div class="form-group"><label class="form-label">Number of Boys in Class 2 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c2_boys" id="c2_boys" min="0" placeholder="0" required data-class="2" data-gender="boys"></div>
@@ -902,7 +1043,7 @@
                                         <div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 3</div>
                                         <div class="teacher-row">
                                             <div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c3_teacher_name" id="c3_teacher_name" required></div>
-                                            <div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c3_teacher_phone" id="c3_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c3_teacher_phone">Enter 9-digit number</div></div>
+                                            <div class="form-group"><label class="form-label">Teacher Phone <span style="font-size:9px;color:#888;">(Optional)</span></label><input type="tel" class="form-input phone-field" name="c3_teacher_phone" id="c3_teacher_phone" pattern="[0-9]{9}" maxlength="9" placeholder="9 digits (optional)"><div class="field-error" id="error_c3_teacher_phone">Enter 9-digit number if provided</div></div>
                                         </div>
                                         <div class="class-grid">
                                             <div class="form-group"><label class="form-label">Number of Boys in Class 3 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c3_boys" id="c3_boys" min="0" placeholder="0" required data-class="3" data-gender="boys"></div>
@@ -916,7 +1057,7 @@
                                         <div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 4</div>
                                         <div class="teacher-row">
                                             <div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c4_teacher_name" id="c4_teacher_name" required></div>
-                                            <div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c4_teacher_phone" id="c4_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c4_teacher_phone">Enter 9-digit number</div></div>
+                                            <div class="form-group"><label class="form-label">Teacher Phone <span style="font-size:9px;color:#888;">(Optional)</span></label><input type="tel" class="form-input phone-field" name="c4_teacher_phone" id="c4_teacher_phone" pattern="[0-9]{9}" maxlength="9" placeholder="9 digits (optional)"><div class="field-error" id="error_c4_teacher_phone">Enter 9-digit number if provided</div></div>
                                         </div>
                                         <div class="class-grid">
                                             <div class="form-group"><label class="form-label">Number of Boys in Class 4 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c4_boys" id="c4_boys" min="0" placeholder="0" required data-class="4" data-gender="boys"></div>
@@ -930,7 +1071,7 @@
                                         <div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 5</div>
                                         <div class="teacher-row">
                                             <div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c5_teacher_name" id="c5_teacher_name" required></div>
-                                            <div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c5_teacher_phone" id="c5_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c5_teacher_phone">Enter 9-digit number</div></div>
+                                            <div class="form-group"><label class="form-label">Teacher Phone <span style="font-size:9px;color:#888;">(Optional)</span></label><input type="tel" class="form-input phone-field" name="c5_teacher_phone" id="c5_teacher_phone" pattern="[0-9]{9}" maxlength="9" placeholder="9 digits (optional)"><div class="field-error" id="error_c5_teacher_phone">Enter 9-digit number if provided</div></div>
                                         </div>
                                         <div class="class-grid">
                                             <div class="form-group"><label class="form-label">Number of Boys in Class 5 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c5_boys" id="c5_boys" min="0" placeholder="0" required data-class="5" data-gender="boys"></div>
@@ -1049,7 +1190,7 @@
                             </form>
                         </div>
                     </div>
-                </div><!-- /mainFormWrap -->
+                </div><!-- /mainFormScroll --></div><!-- /mainFormWrap -->
 
                 <!-- FOOTER -->
                 <div class="page-footer">
@@ -1316,6 +1457,76 @@
         { id:'report',         file:'distribution_report.html',  label:'Distribution Report',    icon:'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8',                          color:'#17becf', dark:'#109aaa' }
     ];
 
+    // Sub-tab content per module (video, ppt, tool)
+    // Update these paths to point to your actual files
+    const MODULE_RESOURCES = {
+        dataentry:      { video: '', ppt: '' },
+        monitoring:     { video: '', ppt: '' },
+        reconciliation: { video: '', ppt: '' },
+        device:         { video: '', ppt: '' },
+        movement:       { video: '', ppt: '' },
+        itnreceived:    { video: '', ppt: '' },
+        attendance:     { video: '', ppt: '' },
+        report:         { video: '', ppt: '' },
+    };
+
+    function openModuleSubTab(id, tab) {
+        const el = document.getElementById('mod-' + id);
+        if (!el) return;
+        // Update active tab buttons
+        el.querySelectorAll('.mod-subtab').forEach(b => b.classList.remove('active'));
+        const btn = el.querySelector('.mod-subtab[data-tab="'+tab+'"]');
+        if (btn) btn.classList.add('active');
+
+        const body = document.getElementById('mod-body-' + id);
+        if (!body) return;
+        const mod = MODULES.find(m => m.id === id);
+        const res = MODULE_RESOURCES[id] || {};
+
+        if (tab === 'tool') {
+            body.innerHTML = `
+              <div class="module-loading" id="mod-loading-${id}" style="display:flex;">
+                <div class="module-spinner"></div>
+                <div style="font-family:'Oswald',sans-serif;font-size:13px;color:#607080;">Loading ${mod?.label}…</div>
+              </div>
+              <iframe class="module-iframe" id="mod-frame-${id}" src=""
+                style="display:none;width:100%;height:100%;border:none;"
+                onload="document.getElementById('mod-loading-${id}').style.display='none';this.style.display='block';"
+                onerror="document.getElementById('mod-loading-${id}').innerHTML='<div style=\'text-align:center;padding:30px;\'>⚠ Could not load module.</div>';">
+              </iframe>`;
+            const frame = document.getElementById('mod-frame-' + id);
+            if (frame && !frame.src.includes(mod.file)) {
+                setTimeout(() => { frame.src = mod.file; }, 50);
+            }
+        } else if (tab === 'video') {
+            const src = res.video || '';
+            body.innerHTML = src
+                ? `<div style="padding:16px;height:100%;display:flex;flex-direction:column;gap:12px;">
+                    <div style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;color:#004080;letter-spacing:.5px;text-transform:uppercase;">📹 Training Video</div>
+                    <video controls style="width:100%;border-radius:10px;border:2px solid #dde3ee;flex:1;background:#000;">
+                      <source src="${src}" type="video/mp4">Your browser does not support video.
+                    </video>
+                   </div>`
+                : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;padding:30px;text-align:center;">
+                    <div style="width:64px;height:64px;background:#f0f4f8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;">🎬</div>
+                    <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#004080;">No Video Available</div>
+                    <div style="font-size:12px;color:#888;">Upload a training video for this module.</div>
+                   </div>`;
+        } else if (tab === 'ppt') {
+            const src = res.ppt || '';
+            body.innerHTML = src
+                ? `<div style="padding:16px;height:100%;display:flex;flex-direction:column;gap:12px;">
+                    <div style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;color:#004080;letter-spacing:.5px;text-transform:uppercase;">📊 Presentation / PDF</div>
+                    <iframe src="${src}" style="width:100%;flex:1;border-radius:10px;border:2px solid #dde3ee;" allowfullscreen></iframe>
+                   </div>`
+                : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;padding:30px;text-align:center;">
+                    <div style="width:64px;height:64px;background:#f0f4f8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;">📊</div>
+                    <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#004080;">No Presentation Available</div>
+                    <div style="font-size:12px;color:#888;">Upload a PDF or PowerPoint for this module.</div>
+                   </div>`;
+        }
+    }
+
     // Build each overlay on first open (lazy)
     function openModule(id) {
         const mod  = MODULES.find(m => m.id === id);
@@ -1329,15 +1540,33 @@
               <div class="module-topbar" style="background:linear-gradient(135deg,${mod.dark},${mod.color});">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="20" height="20" style="flex-shrink:0"><path d="${mod.icon}"/></svg>
                 <div class="module-title">${mod.label}</div>
-                <button class="module-close" onclick="closeModule('${id}')">
-                  <svg viewBox="0 0 24 24" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>CLOSE
-                </button>
+                <div style="display:flex;gap:6px;align-items:center;margin-left:auto;">
+                  <button class="mod-subtab active" data-tab="tool"
+                    onclick="openModuleSubTab('${id}','tool')"
+                    style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:5px 12px;font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
+                    🛠 TOOL
+                  </button>
+                  <button class="mod-subtab" data-tab="video"
+                    onclick="openModuleSubTab('${id}','video')"
+                    style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:5px 12px;font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
+                    🎬 VIDEO
+                  </button>
+                  <button class="mod-subtab" data-tab="ppt"
+                    onclick="openModuleSubTab('${id}','ppt')"
+                    style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:5px 12px;font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
+                    📊 PPT
+                  </button>
+                  <button class="module-close" onclick="closeModule('${id}')">
+                    <svg viewBox="0 0 24 24" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>CLOSE
+                  </button>
+                </div>
               </div>
-              <div class="module-loading" id="mod-loading-${id}">
-                <div class="module-spinner"></div>
-                <div style="font-family:'Oswald',sans-serif;font-size:13px;color:#607080;letter-spacing:.5px;">Loading ${mod.label}…</div>
-              </div>
-              <iframe class="module-iframe" id="mod-frame-${id}" src=""
+              <div id="mod-body-${id}" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+                <div class="module-loading" id="mod-loading-${id}">
+                  <div class="module-spinner"></div>
+                  <div style="font-family:'Oswald',sans-serif;font-size:13px;color:#607080;letter-spacing:.5px;">Loading ${mod.label}…</div>
+                </div>
+                <iframe class="module-iframe" id="mod-frame-${id}" src=""
                 style="display:none;"
                 onload="onModuleLoad('${id}')"
                 onerror="onModuleError('${id}')">
@@ -1359,6 +1588,54 @@
         el.classList.add('show');
         document.body.style.overflow = 'hidden';
     }
+
+    // ── Data Entry sub-tab switcher ─────────────────────────
+    window.showDataEntrySubTab = function(tab) {
+        // Show sub-tab bar
+        const bar = document.getElementById('dataEntrySubTabs');
+        if (bar) bar.style.display = 'flex';
+
+        // Update button styles
+        document.querySelectorAll('.de-subtab').forEach(b => {
+            const active = b.getAttribute('data-tab') === tab;
+            b.style.background = active ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.1)';
+            b.style.borderColor = active ? 'rgba(255,255,255,.5)' : 'rgba(255,255,255,.3)';
+            b.style.color = active ? '#fff' : 'rgba(255,255,255,.8)';
+        });
+
+        // Hide all panels
+        ['tool','video','ppt'].forEach(t => {
+            const p = document.getElementById('de-panel-' + t);
+            if (p) p.style.display = 'none';
+        });
+        const formEl = document.getElementById('mainFormScroll');
+
+        if (tab === 'tool') {
+            if (formEl) formEl.style.display = 'block';
+        } else if (tab === 'video') {
+            if (formEl) formEl.style.display = 'none';
+            const panel = document.getElementById('de-panel-video');
+            if (panel) panel.style.display = 'flex';
+            // Load video if configured
+            const src = MODULE_RESOURCES.dataentry?.video || '';
+            if (src) {
+                document.getElementById('de-video-src').src = src;
+                document.getElementById('de-video-el').load();
+                document.getElementById('de-video-player').style.display = 'block';
+                document.getElementById('de-video-empty').style.display = 'none';
+            }
+        } else if (tab === 'ppt') {
+            if (formEl) formEl.style.display = 'none';
+            const panel = document.getElementById('de-panel-ppt');
+            if (panel) panel.style.display = 'flex';
+            const src = MODULE_RESOURCES.dataentry?.ppt || '';
+            if (src) {
+                document.getElementById('de-ppt-el').src = src;
+                document.getElementById('de-ppt-frame').style.display = 'block';
+                document.getElementById('de-ppt-empty').style.display = 'none';
+            }
+        }
+    };
 
     function onModuleLoad(id) {
         const frame   = document.getElementById('mod-frame-'   + id);
@@ -1406,5 +1683,301 @@
 
     <script src="script_option2.js"></script>
     <script src="ai_agent.js"></script>
+
+<script>
+// ════════════════════════════════════════════════════
+// APP LOCK
+// ════════════════════════════════════════════════════
+const APP_PASSWORD = 'admin123'; // change this later
+const APP_LOCK_KEY = 'sbd_app_unlocked';
+
+window.unlockApp = function() {
+    const val = document.getElementById('lockInput').value;
+    const err = document.getElementById('lockErr');
+    if (val === APP_PASSWORD) {
+        sessionStorage.setItem(APP_LOCK_KEY, '1');
+        document.getElementById('appLockScreen').style.display = 'none';
+        err.classList.remove('show');
+    } else {
+        err.classList.add('show');
+        const inp = document.getElementById('lockInput');
+        inp.value = '';
+        inp.style.animation = 'lockShake .3s ease';
+        setTimeout(() => inp.style.animation = '', 400);
+        inp.focus();
+    }
+};
+
+// Check if already unlocked this session
+(function() {
+    if (sessionStorage.getItem(APP_LOCK_KEY) === '1') {
+        const lock = document.getElementById('appLockScreen');
+        if (lock) lock.style.display = 'none';
+    } else {
+        setTimeout(() => {
+            const inp = document.getElementById('lockInput');
+            if (inp) inp.focus();
+        }, 300);
+    }
+})();
+
+// ════════════════════════════════════════════════════
+// QR CODE SCAN — auto-fill school fields (read-only)
+// ════════════════════════════════════════════════════
+let _qrFilled = false;
+let _qrScanner = null;
+
+window.startSchoolQRScan = function() {
+    const wrap = document.getElementById('schoolQRScannerWrap');
+    if (!wrap) return;
+    wrap.style.display = 'block';
+
+    if (typeof Html5Qrcode !== 'undefined') {
+        _qrScanner = new Html5Qrcode('schoolQRReader');
+        _qrScanner.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            (decoded) => {
+                window.stopSchoolQRScan();
+                window.processSchoolQR(decoded);
+            },
+            () => {}
+        ).catch(e => {
+            showNotification('Camera error: ' + e.message, 'error');
+            wrap.style.display = 'none';
+        });
+    } else {
+        showNotification('QR scanner not available. Add html5-qrcode library.', 'error');
+        wrap.style.display = 'none';
+    }
+};
+
+window.stopSchoolQRScan = function() {
+    if (_qrScanner) { _qrScanner.stop().catch(() => {}); _qrScanner = null; }
+    const wrap = document.getElementById('schoolQRScannerWrap');
+    if (wrap) wrap.style.display = 'none';
+};
+
+window.processSchoolQR = function(raw) {
+    let data;
+    try { data = JSON.parse(raw); } catch {
+        showNotification('⛔ Invalid QR — not an ICF-SL school QR code', 'error'); return;
+    }
+    if (!data.school_name && !data.schoolName) {
+        showNotification('⛔ QR code does not contain school data', 'error'); return;
+    }
+
+    const school     = data.school_name   || data.schoolName   || '';
+    const district   = data.district      || '';
+    const chiefdom   = data.chiefdom      || '';
+    const facility   = data.facility      || data.phu          || '';
+    const community  = data.community     || '';
+    const enrollment = data.enrollment    || data.school_enrollment || '';
+    const emis       = data.emis_number   || data.emis          || '';
+    const status     = data.school_status || data.status        || '';
+
+    // Check if school is in CSV (existing) or new
+    const inCSV = _isSchoolInCSV(district, chiefdom, facility, community, school);
+
+    // Set cascading dropdowns
+    _setSelectReadOnly('district',    district);
+    _setSelectReadOnly('chiefdom',    chiefdom);
+    _setSelectReadOnly('facility',    facility);
+    _setSelectReadOnly('community',   community);
+    _setSelectReadOnly('school_name', school);
+
+    if (enrollment) {
+        const enrEl = document.getElementById('school_enrollment');
+        if (enrEl) { enrEl.value = enrollment; enrEl.readOnly = true; }
+    }
+    if (emis) {
+        const emisEl = document.getElementById('emis_number');
+        if (emisEl) { emisEl.value = emis; emisEl.readOnly = true; }
+    }
+    if (status) {
+        const stEl = document.getElementById('school_status');
+        if (stEl) { stEl.value = status; stEl.readOnly = true; }
+    }
+
+    // Tag submission as new school if not in CSV
+    const newSchoolEl = document.getElementById('is_new_school');
+    if (newSchoolEl) newSchoolEl.value = inCSV ? 'No' : 'Yes';
+
+    _qrFilled = true;
+    const banner = document.getElementById('qrFilledBanner');
+    const nameEl = document.getElementById('qrFilledSchoolName');
+    if (banner) { banner.style.display = 'flex';
+        if (!inCSV) {
+            banner.style.background = '#fff8e1';
+            banner.style.borderColor = '#ffc107';
+        }
+    }
+    if (nameEl) {
+        nameEl.textContent = school + (district ? ' · ' + district : '') +
+            (!inCSV ? ' 🆕 NEW SCHOOL' : '');
+        if (!inCSV) nameEl.style.color = '#e6a800';
+    }
+
+    const btn = document.getElementById('qrScanBtn');
+    if (btn) { btn.textContent = '✓ QR FILLED'; btn.style.background = '#28a745'; btn.style.color = '#fff'; }
+
+    const msg = inCSV
+        ? '✅ School auto-filled from QR'
+        : '✅ NEW SCHOOL scanned — not in target list, will be tracked separately';
+    showNotification(msg, 'success');
+    setTimeout(() => { if (window.nextSection) window.nextSection(); }, 1800);
+};
+
+// Check if school exists in the CSV cascading data
+function _isSchoolInCSV(district, chiefdom, facility, community, school) {
+    try {
+        const d = window.ALL_LOCATION_DATA;
+        if (!d) return false;
+        const dKey = Object.keys(d).find(k => k.toLowerCase() === district.toLowerCase());
+        if (!dKey) return false;
+        const cKey = Object.keys(d[dKey]).find(k => k.toLowerCase() === chiefdom.toLowerCase());
+        if (!cKey) return false;
+        const pKey = Object.keys(d[dKey][cKey]).find(k => k.toLowerCase() === facility.toLowerCase());
+        if (!pKey) return false;
+        const comKey = Object.keys(d[dKey][cKey][pKey]).find(k => k.toLowerCase() === community.toLowerCase());
+        if (!comKey) return false;
+        const schools = d[dKey][cKey][pKey][comKey];
+        return Array.isArray(schools) && schools.some(s => s.toLowerCase() === school.toLowerCase());
+    } catch { return false; }
+}
+
+function _setSelectReadOnly(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // Try to find option, or add it
+    let found = false;
+    for (const opt of el.options) {
+        if (opt.value === value || opt.text === value) {
+            el.value = opt.value; found = true; break;
+        }
+    }
+    if (!found && value) {
+        const opt = new Option(value, value, true, true);
+        opt.setAttribute('data-qr-added', '1');
+        el.appendChild(opt);
+        el.value = value;
+    }
+    el.disabled = true;
+    el.style.background = '#e8f5ee';
+    el.style.borderColor = '#28a745';
+    el.style.cursor = 'not-allowed';
+    // Trigger cascade events
+    el.dispatchEvent(new Event('change'));
+}
+
+window.clearQRFill = function() {
+    _qrFilled = false;
+    // Re-enable all location dropdowns
+    ['district','chiefdom','facility','community','school_name'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.disabled = false;
+        el.style.background = '';
+        el.style.borderColor = '';
+        el.style.cursor = '';
+        // Remove QR-added options
+        [...el.options].filter(o => o.getAttribute('data-qr-added')).forEach(o => o.remove());
+    });
+    const banner = document.getElementById('qrFilledBanner');
+    if (banner) banner.style.display = 'none';
+    const btn = document.getElementById('qrScanBtn');
+    if (btn) { btn.textContent = '📷 SCAN QR'; btn.style.background = ''; btn.style.color = ''; }
+};
+
+// ════════════════════════════════════════════════════
+// HEAD TEACHER PHONE — 9-digit, unique validation
+// ════════════════════════════════════════════════════
+(function() {
+    function getUsedPhones() {
+        // Collect from submitted schools + pending + drafts
+        const all = [
+            ...(window.state?.submittedSchools || []).map(s => s.data || s),
+            ...(window.state?.pendingSubmissions || []),
+            ...(window.state?.drafts || []).map(d => d.data || d)
+        ];
+        return new Set(all.map(r => (r.head_teacher_phone || '').trim()).filter(Boolean));
+    }
+
+    function validateHTPhone() {
+        const inp   = document.getElementById('head_teacher_phone');
+        const errEl = document.getElementById('error_head_teacher_phone');
+        if (!inp || !errEl) return true;
+
+        const val = inp.value.trim();
+
+        // Empty check
+        if (!val) {
+            errEl.textContent = 'Head teacher phone is required';
+            inp.classList.add('error');
+            return false;
+        }
+        // 9 digits
+        if (!/^[0-9]{9}$/.test(val)) {
+            errEl.textContent = 'Must be exactly 9 digits';
+            inp.classList.add('error');
+            return false;
+        }
+        // Uniqueness — local check
+        const currentSchool = document.getElementById('school_name')?.value || '';
+        const usedPhones = getUsedPhones();
+        // Allow same phone on same school (re-submission / draft)
+        const existingEntry = (window.state?.submittedSchools || [])
+            .concat(window.state?.pendingSubmissions || [])
+            .find(s => {
+                const d = s.data || s;
+                return (d.head_teacher_phone || '') === val && (d.school_name || '') !== currentSchool;
+            });
+
+        if (existingEntry) {
+            const d = existingEntry.data || existingEntry;
+            errEl.textContent = '⛔ Phone already used for ' + (d.school_name || 'another school');
+            inp.classList.add('error');
+            return false;
+        }
+
+        inp.classList.remove('error');
+        errEl.textContent = '';
+        return true;
+    }
+
+    // Attach validator on blur and input
+    document.addEventListener('DOMContentLoaded', () => {
+        const inp = document.getElementById('head_teacher_phone');
+        if (inp) {
+            inp.addEventListener('blur',  validateHTPhone);
+            inp.addEventListener('input', () => {
+                if (inp.value.length === 9) validateHTPhone();
+            });
+        }
+    });
+
+    // Expose for doSubmit to call
+    window.validateHeadTeacherPhone = validateHTPhone;
+
+    // Online duplicate check during submission
+    window.checkHeadTeacherPhoneOnline = async function(phone) {
+        if (!phone || phone.length !== 9) return { duplicate: false };
+        try {
+            const url = (window.CONFIG?.SCRIPT_URL || '') +
+                '?action=checkDuplicate&field=head_teacher_phone&value=' + encodeURIComponent(phone);
+            const res = await Promise.race([
+                fetch(url),
+                new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 4000))
+            ]);
+            if (res.ok) {
+                const d = await res.json();
+                return { duplicate: !!d.duplicate, school: d.school_name || '' };
+            }
+        } catch {}
+        return { duplicate: false }; // fail open
+    };
+})();
+</script>
+
 </body>
 </html>
