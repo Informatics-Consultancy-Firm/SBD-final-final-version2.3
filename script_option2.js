@@ -932,6 +932,12 @@ function setupSchoolSubmissionCheck() {
     schoolSel.addEventListener('change', async function() {
         const key = currentSchoolKey();
 
+        // ── Show common fields + nav whenever a school is selected ─
+        const cf  = document.getElementById('commonFields');
+        const nav = document.getElementById('sectionBNav');
+        if (key && cf)  cf.style.display  = 'block';
+        if (key && nav) nav.style.display = 'flex';
+
         // ── Auto-fill school metadata from CSV ─────────────────
         const meta = window.CSV_SCHOOL_DATA && window.CSV_SCHOOL_DATA[key];
         if (meta) {
@@ -1550,6 +1556,14 @@ function validateCurrentSection() {
     section.querySelectorAll('input[required], select[required]').forEach(field => {
         if (field.type === 'hidden') return;
         if (field.disabled) return;   // skip disabled fields (e.g. section_loc)
+        // Skip fields inside hidden containers (display:none)
+        let el = field;
+        let parentHidden = false;
+        while (el && el !== section) {
+            if (el.style && el.style.display === 'none') { parentHidden = true; break; }
+            el = el.parentElement;
+        }
+        if (parentHidden) return;
         if (!field.value || field.value.trim() === '') {
             isValid = false; field.classList.add('error');
             document.getElementById('error_'+field.id)?.classList.add('show');
