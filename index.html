@@ -924,17 +924,16 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <!-- Enrollment, EMIS, Status — inside manualEntryBlock, auto-filled from CSV on school select -->
+                                    <div class="form-group"><label class="form-label">SCHOOL ENROLLMENT <span class="required">*</span></label><input type="number" class="form-input" name="school_enrollment" id="school_enrollment" min="0" placeholder="e.g. 210" required><div class="field-error" id="error_school_enrollment">This field is required</div></div>
+                                    <div class="form-group"><label class="form-label">EMIS NUMBER</label><input type="text" class="form-input" name="emis_number" id="emis_number" placeholder="e.g. 12345"></div>
+                                    <div class="form-group"><label class="form-label">SCHOOL STATUS <span class="required">*</span></label><select class="form-input" name="school_status" id="school_status" required><option value="">Select...</option><option value="Old">Old</option><option value="New">New</option></select><div class="field-error" id="error_school_status">Please select school status</div></div>
                                     </div><!-- /manualEntryBlock -->
 
-                                    <!-- COMMON FIELDS — shown after school identified (both QR and manual) -->
-                                    <div id="commonFields" style="display:none;">
-                                    <div class="form-group"><label class="form-label">SCHOOL ENROLLMENT <span class="required">*</span></label><input type="number" class="form-input" name="school_enrollment" id="school_enrollment" min="0" placeholder="Total pupils enrolled" required><div class="field-hint">Auto-populated from school data · Read-only</div><div class="field-error" id="error_school_enrollment">This field is required</div></div>
-                                    <div class="form-group"><label class="form-label">EMIS NUMBER</label><input type="text" class="form-input" name="emis_number" id="emis_number" placeholder="e.g. 12345"><div class="field-hint">Auto-populated from school data · Read-only</div></div>
-                                    <div class="form-group"><label class="form-label">SCHOOL STATUS <span class="required">*</span></label><select class="form-input" name="school_status" id="school_status" required><option value="">Select...</option><option value="Old">Old (existing in target list)</option><option value="New">New (not in target list)</option></select><div class="field-hint">Auto-populated from school data · Read-only</div><div class="field-error" id="error_school_status">Please select school status</div></div>
+                                    <!-- Head teacher + date — always visible once in Section B -->
                                     <div class="form-group"><label class="form-label">HEAD TEACHER NAME <span class="required">*</span></label><input type="text" class="form-input name-field" name="head_teacher" id="head_teacher" required><div class="field-error" id="error_head_teacher">Name must contain only letters</div></div>
                                     <div class="form-group"><label class="form-label">HEAD TEACHER PHONE <span class="required">*</span></label><input type="tel" class="form-input" name="head_teacher_phone" id="head_teacher_phone" required pattern="[0-9]{9}" maxlength="9"><div class="field-hint">Enter 9-digit phone number</div><div class="field-error" id="error_head_teacher_phone">Please enter a valid 9-digit phone number</div></div>
                                     <div class="form-group"><label class="form-label">DATE OF DISTRIBUTION <span class="required">*</span></label><input type="date" class="form-input" name="distribution_date" id="distribution_date" required><div class="field-error" id="error_distribution_date">This field is required</div></div>
-                                    </div><!-- /commonFields -->
 
                                     <div id="sectionBNav" class="navigation-buttons">
                                         <button type="button" class="btn-nav btn-back" onclick="previousSection()"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> BACK</button>
@@ -1595,12 +1594,18 @@ window.ensureSectionBVisible = function() {
     const bothHidden  = (!qrBlock || qrBlock.style.display === 'none') &&
                         (!manualBlock || manualBlock.style.display === 'none');
     if (bothHidden) {
-        // Re-use previously chosen method if available
-        if (window._entryMethod) {
-            window.chooseEntryMethod(window._entryMethod);
+        if (window._entryMethod === 'qr') {
+            window.chooseEntryMethod('qr');
+        } else if (window._entryMethod === 'manual') {
+            // Just show manual block — no modal needed
+            if (manualBlock) manualBlock.style.display = 'block';
         } else {
             window.showEntryMethodModal();
         }
+    }
+    // Always ensure manualEntryBlock visible for manual method
+    if (window._entryMethod === 'manual' && manualBlock) {
+        manualBlock.style.display = 'block';
     }
 };
 
@@ -1725,18 +1730,12 @@ window.processSchoolQR = function(raw) {
     _setSelectReadOnly('community',   community);
     _setSelectReadOnly('school_name', school);
 
-    if (enrollment) {
-        const enrEl = document.getElementById('school_enrollment');
-        if (enrEl) { enrEl.value = enrollment; enrEl.readOnly = true; }
-    }
-    if (emis) {
-        const emisEl = document.getElementById('emis_number');
-        if (emisEl) { emisEl.value = emis; emisEl.readOnly = true; }
-    }
-    if (status) {
-        const stEl = document.getElementById('school_status');
-        if (stEl) { stEl.value = status; stEl.readOnly = true; }
-    }
+    const enrEl  = document.getElementById('school_enrollment');
+    const emisEl = document.getElementById('emis_number');
+    const stEl   = document.getElementById('school_status');
+    if (enrEl)  enrEl.value  = enrollment || '';
+    if (emisEl) emisEl.value = emis       || '';
+    if (stEl)   stEl.value   = status     || '';
 
     // Tag submission as new school if not in CSV
     const newSchoolEl = document.getElementById('is_new_school');
@@ -1747,8 +1746,6 @@ window.processSchoolQR = function(raw) {
     // Show cascading fields (read-only), common fields, and nav
     const manualBlock = document.getElementById('manualEntryBlock');
     if (manualBlock) manualBlock.style.display = 'block';
-    const cf = document.getElementById('commonFields');
-    if (cf) cf.style.display = 'block';
     const nav = document.getElementById('sectionBNav');
     if (nav) nav.style.display = 'flex';
 
@@ -1843,8 +1840,6 @@ window.clearQRFill = function() {
     const btn = document.getElementById('qrScanBtn');
     if (btn) { btn.textContent = '📷 SCAN QR'; btn.style.background = ''; btn.style.color = ''; }
     // Hide common fields and nav — back to scan mode
-    const cf = document.getElementById('commonFields');
-    if (cf) cf.style.display = 'none';
     const nav = document.getElementById('sectionBNav');
     if (nav) nav.style.display = 'none';
 };
