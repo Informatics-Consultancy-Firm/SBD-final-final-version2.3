@@ -1744,7 +1744,9 @@ window.processSchoolQR = function(raw) {
 
     _qrFilled = true;
 
-    // Show common fields and nav
+    // Show cascading fields (read-only), common fields, and nav
+    const manualBlock = document.getElementById('manualEntryBlock');
+    if (manualBlock) manualBlock.style.display = 'block';
     const cf = document.getElementById('commonFields');
     if (cf) cf.style.display = 'block';
     const nav = document.getElementById('sectionBNav');
