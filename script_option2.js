@@ -1587,16 +1587,7 @@ function validateCurrentSection() {
     });
 
     if (state.currentSection === 3) {
-        const pbo = document.getElementById('itn_type_pbo')?.checked||false;
-        const ig2 = document.getElementById('itn_type_ig2')?.checked||false;
-        if (!pbo && !ig2) {
-            isValid = false;
-            document.getElementById('error_itn_type')?.classList.add('show');
-            showNotification('Please select at least one ITN type.', 'error');
-        } else {
-            document.getElementById('error_itn_type')?.classList.remove('show');
-        }
-        if ((pbo || ig2) && !validateITNQuantities()) isValid = false;
+        // ITN type is Dual-AI — no quantity split validation needed
         document.querySelectorAll('.itn-field').forEach(field => {
             const maxField = document.getElementById(field.getAttribute('data-max-field'));
             if (maxField && (parseInt(field.value)||0) > (parseInt(maxField.value)||0)) {
@@ -1887,8 +1878,9 @@ function collectDraftData() {
     const data = {
         _savedAt:        new Date().toISOString(),
         _currentSection: state.currentSection,
-        itn_type_pbo:    document.getElementById('itn_type_pbo')?.checked || false,
-        itn_type_ig2:    document.getElementById('itn_type_ig2')?.checked || false,
+        itn_type:        'Dual-AI',
+        itn_type_pbo:    false,
+        itn_type_ig2:    false,
     };
     for (const [k, v] of formData.entries()) data[k] = v;
     return data;
@@ -1999,22 +1991,8 @@ window.finalizeForm = function() {
             return;
         }
     }
-    const pbo = document.getElementById('itn_type_pbo')?.checked || false;
-    const ig2 = document.getElementById('itn_type_ig2')?.checked || false;
-    if (!pbo && !ig2) {
-        showNotification('Please select at least one ITN type.', 'error');
-        state.currentSection = 3;
-        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
-        document.querySelector('.form-section[data-section="3"]')?.classList.add('active');
-        updateProgress(); return;
-    }
-    if (!validateITNQuantities()) {
-        showNotification('ITN type quantities must equal total ITNs received.', 'error');
-        state.currentSection = 3;
-        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
-        document.querySelector('.form-section[data-section="3"]')?.classList.add('active');
-        updateProgress(); return;
-    }
+    // ITN type is always Dual-AI — no check needed
+    // ITN quantity split validation removed — Dual-AI only
     // ── Track new schools ─────────────────────────────────────
     const _district   = document.getElementById('district')?.value   || '';
     const _chiefdom   = document.getElementById('chiefdom')?.value   || '';
@@ -2074,22 +2052,8 @@ window.doSubmit = async function() {
             return;
         }
     }
-    const pbo = document.getElementById('itn_type_pbo')?.checked || false;
-    const ig2 = document.getElementById('itn_type_ig2')?.checked || false;
-    if (!pbo && !ig2) {
-        showNotification('Please select at least one ITN type.', 'error');
-        state.currentSection = 3;
-        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
-        document.querySelector('.form-section[data-section="3"]')?.classList.add('active');
-        updateProgress(); return;
-    }
-    if (!validateITNQuantities()) {
-        showNotification('ITN type quantities must equal total ITNs received.', 'error');
-        state.currentSection = 3;
-        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
-        document.querySelector('.form-section[data-section="3"]')?.classList.add('active');
-        updateProgress(); return;
-    }
+    // ITN type is always Dual-AI — no check needed
+    // ITN quantity split validation removed — Dual-AI only
     // ── Head teacher phone unique check online ──────────────────
     const htPhone = document.getElementById('head_teacher_phone')?.value || '';
     if (htPhone && state.isOnline) {
