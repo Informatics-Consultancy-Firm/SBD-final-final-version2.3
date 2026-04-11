@@ -504,11 +504,22 @@ function injectSummaryModal() {
               <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
             </svg>SCHOOL COVERAGE SUMMARY
           </span>
-          <button class="modal-close" onclick="closeSummaryModal()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
+          <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+            <button id="summaryRefreshBtn" onclick="window.refreshSummaryFromServer()"
+              style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:7px;padding:6px 13px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;display:flex;align-items:center;gap:6px;transition:all .2s;"
+              onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
+              <svg id="summaryRefreshIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+              </svg>
+              REFRESH
+            </button>
+            <button class="modal-close" onclick="closeSummaryModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
         </div>
         <div class="modal-body" id="summaryModalBody"></div>
       </div>
@@ -1037,7 +1048,7 @@ function setupSchoolSubmissionCheck() {
 }
 
 function injectSubmittedBanner() {
-    const section2 = document.querySelector('.form-section[data-section="2"]');
+    const section2 = document.querySelector('.form-section[data-section="3"]');
     if (!section2) return;
     const banner = document.createElement('div');
     banner.id = 'schoolSubmittedBanner';
@@ -1326,6 +1337,58 @@ window.openSummaryModal = function() {
       </div>`;
 
     if (modal) modal.classList.add('show');
+};
+
+window.refreshSummaryFromServer = function() {
+    if (!state.isOnline) {
+        showNotification('You are offline — showing local data.', 'info');
+        return;
+    }
+
+    // Spin the icon
+    const icon = document.getElementById('summaryRefreshIcon');
+    const btn  = document.getElementById('summaryRefreshBtn');
+    if (icon) icon.style.animation = 'spin 0.8s linear infinite';
+    if (btn)  btn.disabled = true;
+
+    fetch(CONFIG.SCRIPT_URL + '?action=getAllSubmissions')
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+        if (res.status === 'ok' && Array.isArray(res.submissions)) {
+            // Merge server submissions into state.submittedSchools
+            res.submissions.forEach(function(sub) {
+                const key = makeSchoolKey(
+                    sub.district, sub.chiefdom, sub.facility,
+                    sub.community, sub.school_name
+                );
+                if (key && !isSchoolSubmitted(key)) {
+                    state.submittedSchools.push({
+                        key:         key,
+                        district:    sub.district    || '',
+                        chiefdom:    sub.chiefdom    || '',
+                        facility:    sub.facility    || '',
+                        community:   sub.community   || '',
+                        school_name: sub.school_name || '',
+                        timestamp:   sub.timestamp   || '',
+                        data:        sub
+                    });
+                }
+            });
+            saveState();
+            // Re-render summary
+            window.openSummaryModal();
+            showNotification('Summary updated — ' + res.submissions.length + ' records from server.', 'success');
+        } else {
+            showNotification('Could not fetch data from server.', 'error');
+        }
+    })
+    .catch(function() {
+        showNotification('Server unreachable — showing local data.', 'error');
+    })
+    .finally(function() {
+        if (icon) icon.style.animation = '';
+        if (btn)  btn.disabled = false;
+    });
 };
 
 window.closeSummaryModal = function() {
@@ -2439,25 +2502,11 @@ window.updateNewSchoolName = function(val) {
 // ============================================
 // DOWNLOAD DATA
 // ============================================
-function downloadData() {
-    const allData=[...state.pendingSubmissions,...state.drafts];
-    if(allData.length===0){ showNotification('No data to download.','info'); return; }
-    const keys=new Set(); allData.forEach(item=>Object.keys(item).forEach(k=>keys.add(k)));
-    const headers=Array.from(keys);
-    let csv=headers.join(',')+'\n';
-    allData.forEach(item=>{
-        csv+=headers.map(h=>{
-            let v=item[h]||'';
-            if(typeof v==='string'&&(v.includes(',')||v.includes('"')||v.includes('\n'))) v='"'+v.replace(/"/g,'""')+'"';
-            return v;
-        }).join(',')+'\n';
-    });
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-    a.download='itn_data_'+new Date().toISOString().split('T')[0]+'.csv';
-    a.click(); URL.revokeObjectURL(a.href);
-    showNotification('Data downloaded!','success');
-}
+
+    // Show loading state on button
+    const btn = document.getElementById('downloadDataBtn');
+    const origHTML = btn ? btn.innerHTML : '';
+    if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="30 60"/></svg><br>LOADING';
 
 // ============================================
 // ANALYSIS  (overridden by ai_agent.js)
@@ -2504,13 +2553,11 @@ function showNotification(msg, type) {
 
 function setupEventListeners() {
     // viewDataBtn — handled by guardedAction in HTML
-    // downloadDataBtn — handled by guardedAction in HTML
     // viewAnalysisBtn — handled by guardedAction in HTML
     // viewSummaryBtn — handled by guardedAction in HTML
     // aiAgentBtn — handled by guardedAction in HTML
 
     // Expose download so guardedAction can call it
-    window._downloadData = downloadData;
 
     const df = document.getElementById('dataForm');
     if (df) df.addEventListener('submit', handleSubmit);
