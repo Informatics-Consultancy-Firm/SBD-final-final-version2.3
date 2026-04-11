@@ -1525,8 +1525,8 @@ window.previousSection = function() {
         updateProgress();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         // Restore Section B content when going back
-        if (state.currentSection === 2) {
-            setTimeout(() => { window.ensureSectionBVisible && window.ensureSectionBVisible(); }, 150);
+        if (state.currentSection === 2 || state.currentSection === 3) {
+            setTimeout(function() { window.ensureSectionBVisible && window.ensureSectionBVisible(); }, 150);
         }
     }
 };
@@ -1538,7 +1538,10 @@ function moveToNextSection() {
         document.querySelector('.form-section[data-section="'+state.currentSection+'"]')?.classList.add('active');
         updateProgress();
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        if (state.currentSection === 4) calculateAll();
+        if (state.currentSection === 3) {
+            setTimeout(function() { window.ensureSectionBVisible && window.ensureSectionBVisible(); }, 100);
+        }
+        if (state.currentSection === 5) calculateAll();
     }
 }
 
