@@ -6,22 +6,17 @@
 <title>ICF-SL · ITN Targets</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Oswald',sans-serif;background:#f0f4f8;min-height:100vh;}
 
-.hdr{background:linear-gradient(135deg,#059669,#10b981);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;color:#fff;flex-wrap:wrap;}
-.hdr-left{display:flex;align-items:center;gap:14px;}
+.hdr{background:linear-gradient(135deg,#059669,#10b981);padding:16px 20px;display:flex;align-items:center;gap:14px;color:#fff;}
 .hdr-icon{width:42px;height:42px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;}
 .hdr-title{font-size:16px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;}
 .hdr-sub{font-size:10px;color:rgba(255,255,255,.7);margin-top:2px;}
-.analysis-btn{background:#c8991a;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;letter-spacing:.5px;cursor:pointer;transition:background .2s,transform .1s;}
-.analysis-btn:hover{background:#b8860b;transform:scale(1.02);}
 
 .body{padding:16px;max-width:900px;margin:0 auto;}
 
-/* Summary cards */
 .summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;}
 .summary-card{background:#fff;border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid;}
 .summary-card.target{border-color:#10b981;}
@@ -33,10 +28,8 @@ body{font-family:'Oswald',sans-serif;background:#f0f4f8;min-height:100vh;}
 .distributed .sum-val{color:#06b6d4;}
 .rate .sum-val{color:#f59e0b;}
 
-/* Section header */
 .section-hdr{font-size:13px;font-weight:700;color:#047857;letter-spacing:.5px;margin:20px 0 12px 0;text-transform:uppercase;border-bottom:2px solid #d1fae5;padding-bottom:8px;}
 
-/* District summary table */
 .dist-table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:20px;}
 .dist-table th{background:linear-gradient(135deg,#ecfdf5,#f0fdf4);padding:12px;text-align:left;font-size:11px;font-weight:700;color:#047857;letter-spacing:.4px;border-bottom:1px solid #d1fae5;}
 .dist-table td{padding:11px 12px;border-bottom:1px solid #f0f4f8;font-size:11px;}
@@ -46,7 +39,6 @@ body{font-family:'Oswald',sans-serif;background:#f0f4f8;min-height:100vh;}
 .dist-num{text-align:right;color:#6b7280;}
 .dist-rate{text-align:right;font-weight:600;color:#f59e0b;}
 
-/* District accordion */
 .district-wrap{background:#fff;border-radius:12px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;}
 .district-hdr{padding:14px 16px;background:linear-gradient(135deg,#ecfdf5,#f0fdf4);border-bottom:1px solid #d1fae5;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;}
 .district-hdr:hover{background:linear-gradient(135deg,#d1fae5,#e0f8f4);}
@@ -64,78 +56,33 @@ body{font-family:'Oswald',sans-serif;background:#f0f4f8;min-height:100vh;}
 .progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#06b6d4,#14b8a6);transition:width .3s;}
 .progress-text{font-size:9px;color:#6b7280;margin-top:3px;display:flex;justify-content:space-between;}
 
-/* Empty state */
 .empty{text-align:center;padding:40px 20px;color:#6b7280;}
 .empty svg{width:44px;height:44px;margin-bottom:12px;opacity:.5;}
 
-/* Analysis Modal */
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;justify-content:center;align-items:center;padding:12px;}
-.modal.show{display:flex !important;}
-.modal-container{background:#fff;border-radius:20px;width:100%;max-width:1300px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.4);}
-.modal-header{background:linear-gradient(135deg,#004080,#1a6abf);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
-.modal-tabs{display:flex;background:#f0f4f8;padding:0 16px;gap:4px;}
-.modal-tab{padding:10px 18px;border:none;background:none;color:#607080;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;}
-.modal-tab.active{background:#f4f8ff;color:#004080;border-bottom-color:#c8991a;}
-.modal-body{flex:1;overflow-y:auto;padding:16px;background:#f8fafd;}
-
-/* Loading states */
-.an-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:14px;}
-.an-spinner{width:44px;height:44px;border:4px solid #e4eaf2;border-top-color:#004080;border-radius:50%;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.an-load-txt{font-family:'Oswald',sans-serif;font-size:13px;color:#607080;letter-spacing:.5px;}
-.an-no-data{text-align:center;padding:50px 20px;color:#8090a0;font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.5px;}
-
-/* Targets tab styles */
-.tg-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:18px;}
-.tg-kpi{background:#fff;border-radius:10px;padding:14px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,64,128,.07);border-top:4px solid #004080;}
-.tg-kv{font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;color:#004080;line-height:1;}
-.tg-kl{font-size:10px;color:#607080;text-transform:uppercase;letter-spacing:.5px;margin-top:5px;}
-.tg-nat-bar{height:14px;background:#e4eaf2;border-radius:7px;overflow:hidden;margin:10px 0 18px;}
-.tg-nat-fill{height:100%;border-radius:7px;transition:width .5s;background:linear-gradient(90deg,#004080,#1a6abf);}
-.tg-dist{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,64,128,.08);overflow:hidden;margin-bottom:14px;border:2px solid #d0dce8;}
-.tg-dist-hdr{background:linear-gradient(135deg,#004080,#1a6abf);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;}
-.tg-dist-name{flex:1;font-size:14px;font-weight:700;letter-spacing:.6px;}
-.tg-dist-badge{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:3px 10px;font-size:11px;white-space:nowrap;}
-.tg-chief-tbl{width:100%;border-collapse:collapse;font-size:12px;}
-.tg-chief-tbl th{background:#e8f1fa;padding:9px 14px;text-align:left;font-size:10px;font-weight:600;color:#004080;}
-.tg-chief-tbl td{padding:9px 14px;border-bottom:1px solid #f0f4f8;}
-.tg-prog-cell{display:flex;align-items:center;gap:8px;}
-.tg-prog-bar{background:#e4eaf2;border-radius:4px;height:8px;flex:1;overflow:hidden;}
-.tg-prog-fill{height:100%;border-radius:4px;}
-.tg-chip{display:inline-block;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:600;white-space:nowrap;margin:2px;}
-.tg-chip.done{background:#e8f5e9;color:#28a745;border:1px solid #b2dfcc;}
-.tg-chip.pend{background:#fff8e1;color:#b8860b;border:1px solid #ffe082;}
-
-/* Responsive */
-@media (max-width:600px){
-    .summary-grid{grid-template-columns:1fr 1fr;}
-    .dist-table{font-size:10px;}
-    .dist-table th,.dist-table td{padding:8px;}
-    .hdr{flex-direction:column;text-align:center;}
-    .analysis-btn{width:100%;}
-}
+.debug{background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:12px;margin:16px 0;font-size:12px;color:#92400e;font-family:monospace;max-height:200px;overflow-y:auto;}
 </style>
 </head>
 <body>
 
 <div class="hdr">
-  <div class="hdr-left">
-    <div class="hdr-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
-        <path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999H6.6A2 2 0 003 15z"/>
-      </svg>
-    </div>
-    <div>
-      <div class="hdr-title">ITN Targets</div>
-      <div class="hdr-sub">Planned Enrollment vs Actual Distribution by District & Chiefdom</div>
-    </div>
+  <div class="hdr-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+      <path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999H6.6A2 2 0 003 15z"/>
+    </svg>
   </div>
-  <button class="analysis-btn" onclick="openAnalysisModal()">📊 OPEN ANALYSIS DASHBOARD</button>
+  <div>
+    <div class="hdr-title">ITN Targets</div>
+    <div class="hdr-sub">Planned Enrollment vs Actual Distribution by District & Chiefdom</div>
+  </div>
 </div>
 
 <div class="body">
 
-  <!-- Overall Summary -->
+  <div class="debug" id="debugLog">
+    <strong>Debug Log:</strong><br>
+    Loading... please wait
+  </div>
+
   <div class="summary-grid">
     <div class="summary-card target">
       <div class="sum-lbl">Planned Target (Old Schools)</div>
@@ -151,7 +98,6 @@ body{font-family:'Oswald',sans-serif;background:#f0f4f8;min-height:100vh;}
     </div>
   </div>
 
-  <!-- District Summary Table -->
   <div class="section-hdr">📊 Summary by District</div>
   <table class="dist-table" id="districtSummaryTable">
     <thead>
@@ -167,7 +113,6 @@ body{font-family:'Oswald',sans-serif;background:#f0f4f8;min-height:100vh;}
     </tbody>
   </table>
 
-  <!-- Detailed Chiefdom Breakdown -->
   <div class="section-hdr">🔍 Detailed by Chiefdom (Click District to Expand)</div>
   <div id="districtsContainer"></div>
 
@@ -177,92 +122,83 @@ body{font-family:'Oswald',sans-serif;background:#f0f4f8;min-height:100vh;}
     </svg>
     <div style="font-size:13px;color:#6b7280;letter-spacing:.5px;">No data available</div>
   </div>
-</div>
 
-<!-- Analysis Modal -->
-<div id="analysisModal" class="modal">
-  <div class="modal-container">
-    <div class="modal-header">
-      <div>
-        <span style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;">📊 ITN DISTRIBUTION ANALYSIS</span>
-        <span id="anSubtitle" style="display:inline-block;margin-left:12px;font-size:10px;background:rgba(255,255,255,.15);padding:4px 10px;border-radius:20px;"></span>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button id="anRefreshBtn" onclick="anRefresh()" style="background:#c8991a;border:none;border-radius:8px;padding:6px 14px;color:#fff;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;cursor:pointer;">↻ REFRESH</button>
-        <button onclick="closeAnalysisModal()" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;padding:6px 12px;color:#fff;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;cursor:pointer;">✕ CLOSE</button>
-      </div>
-    </div>
-    <div class="modal-tabs">
-      <button class="modal-tab active" data-tab="analysis" onclick="switchAnTab('analysis')">📈 ANALYSIS</button>
-      <button class="modal-tab" data-tab="targets" onclick="switchAnTab('targets')">🎯 TARGETS</button>
-      <button class="modal-tab" data-tab="dmsphu" onclick="switchAnTab('dmsphu')">📦 DMS → PHU</button>
-    </div>
-    <div id="analysisBody" class="modal-body"></div>
-    <div id="targetsBody" class="modal-body" style="display:none;"></div>
-    <div id="dmsphuBody" class="modal-body" style="display:none;"></div>
-  </div>
 </div>
 
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymRy-M5v0fVLWUjw4IXYhd1oIR2ZvnP_Dzr_iGR-Th0cMIpmE2ntGeujWYH7-C6NHIzA/exec';
-let _sheetRows = [];
-let _targetsData = null;
 
-// ============================================================
-// MAIN TARGETS PAGE FUNCTIONS
-// ============================================================
+function addDebug(msg) {
+    const log = document.getElementById('debugLog');
+    log.innerHTML += '<br>' + msg;
+    log.scrollTop = log.scrollHeight;
+    console.log('[ITN Targets Debug]', msg);
+}
+
 async function loadData() {
     try {
-        // Load cascading_data.csv
+        addDebug('1. Starting load...');
+
+        // 1. Load cascading_data.csv
+        addDebug('2. Fetching cascading_data.csv...');
         const csvRes = await fetch('./cascading_data.csv');
+        if (!csvRes.ok) {
+            throw new Error('cascading_data.csv not found (HTTP ' + csvRes.status + '). Make sure file is in repo root.');
+        }
         const csvText = await csvRes.text();
+        addDebug('3. CSV fetched, size: ' + csvText.length + ' bytes');
         
         const csvTree = {};
-        let dupCount = 0;
-        const seenSchools = new Set();
-        
+        let csvRowCount = 0;
+        let csvOldCount = 0;
+
         Papa.parse(csvText, {
             header: true,
             skipEmptyLines: true,
             step: function(row) {
+                csvRowCount++;
                 const data = row.data;
                 if (!data || !data[0]) return;
                 
                 const dist = (data.District || '').trim();
                 const chf = (data.Chiefdom || '').trim();
+                const phu = (data['Name of PHU'] || '').trim();
                 const school = (data['School Name'] || '').trim();
                 const enroll = parseFloat(data['School Enrollment'] || 0) || 0;
                 const status = (data['School Status'] || 'Old').trim();
                 
                 // Only count OLD schools
                 if (status.toLowerCase() !== 'old' && status !== 'No') return;
-                if (!dist || !chf || !school || enroll === 0) return;
+                csvOldCount++;
                 
-                // Check for duplicates
-                const key = `${dist}|${chf}|${school}`.toLowerCase();
-                if (seenSchools.has(key)) {
-                    dupCount++;
-                    return;
-                }
-                seenSchools.add(key);
-                
+                if (!dist || !chf || enroll === 0) return;
                 if (!csvTree[dist]) csvTree[dist] = {};
                 if (!csvTree[dist][chf]) csvTree[dist][chf] = { target: 0, schools: [] };
                 
                 csvTree[dist][chf].target += enroll;
                 csvTree[dist][chf].schools.push(school);
-            },
-            complete: function() {
-                console.log('CSV loaded, duplicates skipped:', dupCount);
             }
         });
 
-        // Load submissions data from GAS
-        const sub = await fetch(SCRIPT_URL + '?action=getData')
-            .then(r => r.json()).catch(() => ({ data: [] }));
-        const submissions = sub.data || [];
+        addDebug('4. CSV parsed: ' + csvRowCount + ' rows, ' + csvOldCount + ' with status=Old');
+        addDebug('5. CSV tree districts: ' + Object.keys(csvTree).join(', '));
 
-        // Build distributed data
+        // 2. Load submissions data
+        addDebug('6. Fetching submissions from GAS...');
+        const sub = await fetch(SCRIPT_URL + '?action=getData')
+            .then(r => {
+                addDebug('7. GAS response status: ' + r.status);
+                return r.json();
+            })
+            .catch(e => {
+                addDebug('ERROR fetching GAS: ' + e.message);
+                return { data: [] };
+            });
+        
+        const submissions = sub.data || [];
+        addDebug('8. Submissions received: ' + submissions.length + ' records');
+
+        // 3. Build distributed data
         const distributedTree = {};
         submissions.forEach(function(s) {
             const dist = (s.district || s.District || '').trim();
@@ -272,10 +208,13 @@ async function loadData() {
             if (!dist || !chf || itnDist === 0) return;
             if (!distributedTree[dist]) distributedTree[dist] = {};
             if (!distributedTree[dist][chf]) distributedTree[dist][chf] = 0;
+            
             distributedTree[dist][chf] += itnDist;
         });
 
-        // Merge data
+        addDebug('9. Distributed tree districts: ' + Object.keys(distributedTree).join(', '));
+
+        // 4. Merge
         const merged = {};
         for (const d in csvTree) {
             if (!merged[d]) merged[d] = {};
@@ -284,6 +223,7 @@ async function loadData() {
                 merged[d][c].target = csvTree[d][c].target;
             }
         }
+        
         for (const d in distributedTree) {
             if (!merged[d]) merged[d] = {};
             for (const c in distributedTree[d]) {
@@ -292,15 +232,15 @@ async function loadData() {
             }
         }
 
+        addDebug('10. Merged tree has ' + Object.keys(merged).length + ' districts');
+
         if (!Object.keys(merged).length) {
+            addDebug('ERROR: No data to display');
             document.getElementById('emptyState').style.display = 'block';
             return;
         }
 
-        // Store for targets tab
-        _targetsData = merged;
-
-        // Calculate totals
+        // 5. Calculate totals
         let totalTarget = 0, totalDist = 0;
         const districtSummary = {};
         
@@ -319,7 +259,9 @@ async function loadData() {
         document.getElementById('totalDistributed').textContent = totalDist.toLocaleString();
         document.getElementById('achievementRate').textContent = rate;
 
-        // Render district summary table
+        addDebug('11. Totals: Target=' + totalTarget + ', Distributed=' + totalDist + ', Rate=' + rate + '%');
+
+        // 6. Render district summary table
         const tbody = document.getElementById('districtSummaryBody');
         tbody.innerHTML = '';
         Object.keys(districtSummary).sort().forEach(function(dist) {
@@ -333,7 +275,7 @@ async function loadData() {
             tbody.appendChild(row);
         });
 
-        // Render chiefdom accordions
+        // 7. Render detailed chiefdom accordions
         const container = document.getElementById('districtsContainer');
         container.innerHTML = '';
         Object.keys(merged).sort().forEach(function(dist) {
@@ -386,333 +328,19 @@ async function loadData() {
             container.appendChild(dWrap);
         });
 
+        addDebug('12. ✅ DATA LOADED SUCCESSFULLY');
+        document.getElementById('debugLog').style.background = '#dcfce7';
+        document.getElementById('debugLog').style.color = '#166534';
+
     } catch(e) {
-        console.error('Error loading data:', e);
+        addDebug('❌ ERROR: ' + e.message);
         document.getElementById('emptyState').style.display = 'block';
+        document.getElementById('debugLog').style.background = '#fee2e2';
+        document.getElementById('debugLog').style.color = '#991b1b';
     }
 }
 
-// ============================================================
-// ANALYSIS MODAL FUNCTIONS
-// ============================================================
-function openAnalysisModal() {
-    const modal = document.getElementById('analysisModal');
-    if (modal) {
-        modal.classList.add('show');
-        switchAnTab('analysis');
-        anRefresh();
-    }
-}
-
-function closeAnalysisModal() {
-    const modal = document.getElementById('analysisModal');
-    if (modal) modal.classList.remove('show');
-}
-
-function switchAnTab(tab) {
-    const bodies = {
-        analysis: document.getElementById('analysisBody'),
-        targets: document.getElementById('targetsBody'),
-        dmsphu: document.getElementById('dmsphuBody')
-    };
-    
-    // Update tab buttons
-    document.querySelectorAll('.modal-tab').forEach(btn => {
-        btn.classList.remove('active');
-        btn.style.background = 'none';
-        btn.style.color = '#607080';
-        btn.style.borderBottomColor = 'transparent';
-    });
-    
-    const activeBtn = Array.from(document.querySelectorAll('.modal-tab')).find(btn => 
-        btn.textContent.includes(tab.toUpperCase())
-    );
-    if (activeBtn) {
-        activeBtn.classList.add('active');
-        activeBtn.style.background = '#f4f8ff';
-        activeBtn.style.color = '#004080';
-        activeBtn.style.borderBottomColor = '#c8991a';
-    }
-    
-    // Show/hide bodies
-    Object.keys(bodies).forEach(key => {
-        if (bodies[key]) {
-            bodies[key].style.display = key === tab ? 'block' : 'none';
-        }
-    });
-    
-    // Load data for the selected tab
-    if (tab === 'targets') renderTargetsTab();
-    if (tab === 'dmsphu') renderDmsPhuTab();
-}
-
-async function fetchSheetData() {
-    try {
-        const res = await fetch(SCRIPT_URL + '?action=getData');
-        const d = await res.json();
-        const rows = d.rows || d.data || [];
-        console.log('[Analysis] Loaded', rows.length, 'rows');
-        return rows;
-    } catch(e) {
-        console.warn('[Analysis] Fetch failed:', e.message);
-        return [];
-    }
-}
-
-async function anRefresh() {
-    const body = document.getElementById('analysisBody');
-    if (body) body.innerHTML = `<div class="an-loading"><div class="an-spinner"></div><div class="an-load-txt">Refreshing from ICF-SL Server…</div></div>`;
-    
-    try {
-        const rows = await fetchSheetData();
-        _sheetRows = rows;
-        runAnalysis(rows);
-    } catch(e) {
-        if (body) body.innerHTML = `<div class="an-no-data">Error: ${e.message}</div>`;
-    }
-}
-
-function n(r, key, fallback) {
-    let v = r[key];
-    if ((v === undefined || v === '' || v === null) && fallback) v = r[fallback];
-    if (v === undefined || v === null || v === '') return 0;
-    const clean = String(v).replace(/,/g, '').trim();
-    return parseFloat(clean) || 0;
-}
-
-function s(r, key, fallback) {
-    let v = r[key];
-    if ((v === undefined || v === null || v === '') && fallback) v = r[fallback];
-    return String(v || '').trim();
-}
-
-function covColor(p) { return p >= 80 ? '#28a745' : p >= 50 ? '#f0a500' : '#dc3545'; }
-
-function runAnalysis(rows) {
-    const body = document.getElementById('analysisBody');
-    if (!body) return;
-    
-    if (!rows || rows.length === 0) {
-        body.innerHTML = `<div class="an-no-data">No data available. Click REFRESH to load from server.</div>`;
-        return;
-    }
-    
-    let tp = 0, ti = 0, tb = 0, tg = 0, tbi = 0, tgi = 0;
-    rows.forEach(r => {
-        tp += n(r, 'total_pupils');
-        ti += n(r, 'total_itn');
-        tb += n(r, 'total_boys');
-        tg += n(r, 'total_girls');
-        tbi += n(r, 'total_boys_itn');
-        tgi += n(r, 'total_girls_itn');
-    });
-    
-    const ov = tp > 0 ? Math.round((ti / tp) * 100) : 0;
-    const bc = tb > 0 ? Math.round((tbi / tb) * 100) : 0;
-    const gc = tg > 0 ? Math.round((tgi / tg) * 100) : 0;
-    
-    const sub = document.getElementById('anSubtitle');
-    if (sub) sub.textContent = `${rows.length} school(s) · ${ov}% coverage`;
-    
-    body.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;">
-            <div style="background:#fff;border-radius:10px;padding:15px;text-align:center;border-top:3px solid #004080;">
-                <div style="font-size:28px;font-weight:700;color:#004080;">${rows.length}</div>
-                <div style="font-size:10px;color:#607080;">Schools</div>
-            </div>
-            <div style="background:#fff;border-radius:10px;padding:15px;text-align:center;border-top:3px solid #10b981;">
-                <div style="font-size:28px;font-weight:700;color:#10b981;">${tp.toLocaleString()}</div>
-                <div style="font-size:10px;color:#607080;">Total Pupils</div>
-            </div>
-            <div style="background:#fff;border-radius:10px;padding:15px;text-align:center;border-top:3px solid #06b6d4;">
-                <div style="font-size:28px;font-weight:700;color:#06b6d4;">${ti.toLocaleString()}</div>
-                <div style="font-size:10px;color:#607080;">ITNs Distributed</div>
-            </div>
-            <div style="background:#fff;border-radius:10px;padding:15px;text-align:center;border-top:3px solid ${covColor(ov)};">
-                <div style="font-size:28px;font-weight:700;color:${covColor(ov)};">${ov}%</div>
-                <div style="font-size:10px;color:#607080;">Coverage</div>
-            </div>
-            <div style="background:#fff;border-radius:10px;padding:15px;text-align:center;border-top:3px solid #004080;">
-                <div style="font-size:28px;font-weight:700;color:#004080;">${bc}%</div>
-                <div style="font-size:10px;color:#607080;">Boys Coverage</div>
-            </div>
-            <div style="background:#fff;border-radius:10px;padding:15px;text-align:center;border-top:3px solid #e91e8c;">
-                <div style="font-size:28px;font-weight:700;color:#e91e8c;">${gc}%</div>
-                <div style="font-size:10px;color:#607080;">Girls Coverage</div>
-            </div>
-        </div>
-        
-        <div style="background:#fff;border-radius:12px;overflow:hidden;">
-            <div style="background:#004080;color:#fff;padding:10px 16px;font-weight:600;">School List (showing first 50)</div>
-            <div style="overflow-x:auto;">
-                <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                    <thead><tr style="background:#f0f4f8;">
-                        <th style="padding:10px;text-align:left;">School</th>
-                        <th style="padding:10px;text-align:left;">District</th>
-                        <th style="padding:10px;text-align:center;">Pupils</th>
-                        <th style="padding:10px;text-align:center;">ITNs</th>
-                        <th style="padding:10px;text-align:center;">Coverage</th>
-                    </tr></thead>
-                    <tbody>
-                        ${rows.slice(0, 50).map((r, i) => {
-                            const pupils = n(r, 'total_pupils');
-                            const itns = n(r, 'total_itn');
-                            const cov = pupils > 0 ? Math.round((itns / pupils) * 100) : 0;
-                            return `<tr style="border-bottom:1px solid #e0eaf5;">
-                                <td style="padding:8px 10px;">${s(r, 'school_name', 'School Name') || '—'}</td>
-                                <td style="padding:8px 10px;">${s(r, 'district', 'District') || '—'}</td>
-                                <td style="padding:8px 10px;text-align:center;">${pupils}</td>
-                                <td style="padding:8px 10px;text-align:center;">${itns}</td>
-                                <td style="padding:8px 10px;text-align:center;"><span style="background:${covColor(cov)}20;color:${covColor(cov)};padding:2px 8px;border-radius:12px;">${cov}%</span></td>
-                            78<`;
-                        }).join('')}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    `;
-}
-
-async function renderTargetsTab() {
-    const body = document.getElementById('targetsBody');
-    if (!body) return;
-    
-    body.innerHTML = `<div class="an-loading"><div class="an-spinner"></div><div class="an-load-txt">Loading targets data from CSV...</div></div>`;
-    
-    try {
-        // Load CSV directly
-        const csvRes = await fetch('./cascading_data.csv');
-        const csvText = await csvRes.text();
-        
-        const schoolMap = new Map(); // key: district|chiefdom|phu|community|school
-        const phuMap = new Map();    // key: district|chiefdom|phu
-        const chiefdomMap = new Map(); // key: district|chiefdom
-        const districtMap = new Map(); // key: district
-        
-        Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                results.data.forEach(row => {
-                    const district = (row.District || '').trim();
-                    const chiefdom = (row.Chiefdom || '').trim();
-                    const phu = (row['Name of PHU'] || '').trim();
-                    const community = (row['Community'] || '').trim();
-                    const school = (row['School Name'] || '').trim();
-                    const status = (row['School Status'] || 'Old').trim();
-                    
-                    // Only count OLD schools
-                    if (status.toLowerCase() !== 'old' && status !== 'No') return;
-                    if (!district || !chiefdom || !school) return;
-                    
-                    const schoolKey = `${district}|${chiefdom}|${phu}|${community}|${school}`.toLowerCase();
-                    if (!schoolMap.has(schoolKey)) schoolMap.set(schoolKey, { district, chiefdom, phu, community, school });
-                    
-                    const phuKey = `${district}|${chiefdom}|${phu}`.toLowerCase();
-                    if (!phuMap.has(phuKey)) phuMap.set(phuKey, { district, chiefdom, phu, schools: new Set() });
-                    phuMap.get(phuKey).schools.add(school);
-                    
-                    const chiefdomKey = `${district}|${chiefdom}`.toLowerCase();
-                    if (!chiefdomMap.has(chiefdomKey)) chiefdomMap.set(chiefdomKey, { district, chiefdom, phus: new Set() });
-                    chiefdomMap.get(chiefdomKey).phus.add(phu);
-                    
-                    const districtKey = district.toLowerCase();
-                    if (!districtMap.has(districtKey)) districtMap.set(districtKey, { district, chiefdoms: new Set() });
-                    districtMap.get(districtKey).chiefdoms.add(chiefdom);
-                });
-                
-                // Build HTML
-                let html = `
-                    <div class="tg-kpi-row">
-                        <div class="tg-kpi"><div class="tg-kv">${districtMap.size}</div><div class="tg-kl">Districts</div></div>
-                        <div class="tg-kpi"><div class="tg-kv">${chiefdomMap.size}</div><div class="tg-kl">Chiefdoms</div></div>
-                        <div class="tg-kpi"><div class="tg-kv">${phuMap.size}</div><div class="tg-kl">PHUs</div></div>
-                        <div class="tg-kpi"><div class="tg-kv">${schoolMap.size}</div><div class="tg-kl">Target Schools</div></div>
-                    </div>
-                    <div class="tg-nat-bar"><div class="tg-nat-fill" style="width:100%"></div></div>
-                `;
-                
-                // Render districts
-                for (const [dKey, dData] of districtMap) {
-                    const districtName = dData.district;
-                    const chiefdomsList = Array.from(dData.chiefdoms).sort();
-                    const distPhus = chiefdomMap.size;
-                    
-                    html += `
-                        <div class="tg-dist">
-                            <div class="tg-dist-hdr" onclick="toggleDistrictPanel('${dKey.replace(/[^a-z0-9]/g, '_')}')">
-                                <span class="tg-dist-name">📍 ${districtName}</span>
-                                <span class="tg-dist-badge">${chiefdomsList.length} chiefdoms</span>
-                                <span class="tg-dist-badge">▼</span>
-                            </div>
-                            <div id="panel_${dKey.replace(/[^a-z0-9]/g, '_')}" style="display:block;">
-                                <table class="tg-chief-tbl">
-                                    <thead><tr>
-                                        <th>Chiefdom</th>
-                                        <th>PHUs</th>
-                                        <th>Schools</th>
-                                        <th>Status</th>
-                                    <tr></thead>
-                                    <tbody>
-                    `;
-                    
-                    for (const chiefdom of chiefdomsList) {
-                        const cKey = `${districtName}|${chiefdom}`.toLowerCase();
-                        const cData = chiefdomMap.get(cKey);
-                        const phuCount = cData ? cData.phus.size : 0;
-                        let schoolCount = 0;
-                        for (const phu of (cData?.phus || [])) {
-                            const pKey = `${districtName}|${chiefdom}|${phu}`.toLowerCase();
-                            const pData = phuMap.get(pKey);
-                            schoolCount += pData ? pData.schools.size : 0;
-                        }
-                        
-                        html += `
-                            <tr>
-                                <td style="font-weight:700;">${chiefdom}</td>
-                                <td>${phuCount}</td>
-                                <td>${schoolCount}</td>
-                                <td><span class="tg-chip pend">Pending</span></td>
-                            </tr>
-                        `;
-                    }
-                    
-                    html += `</tbody></table></div></div>`;
-                }
-                
-                body.innerHTML = html;
-            }
-        });
-    } catch(e) {
-        console.error('Targets tab error:', e);
-        body.innerHTML = `<div class="an-no-data">Error loading cascading_data.csv: ${e.message}</div>`;
-    }
-}
-
-function renderDmsPhuTab() {
-    const body = document.getElementById('dmsphuBody');
-    if (body) {
-        body.innerHTML = `<div class="an-loading"><div class="an-spinner"></div><div class="an-load-txt">DMS/PHU tracking - Coming soon...</div></div>`;
-    }
-}
-
-function toggleDistrictPanel(panelId) {
-    const panel = document.getElementById(panelId);
-    if (panel) {
-        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-    }
-}
-
-// Make functions global
-window.openAnalysisModal = openAnalysisModal;
-window.closeAnalysisModal = closeAnalysisModal;
-window.switchAnTab = switchAnTab;
-window.anRefresh = anRefresh;
-window.toggleDistrictPanel = toggleDistrictPanel;
-
-// Initialize
 loadData();
 </script>
-
 </body>
 </html>
