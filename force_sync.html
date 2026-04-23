@@ -144,49 +144,6 @@ body{font-family:'Oswald',sans-serif;background:#f0f4f8;min-height:100vh;}
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymRy-M5v0fVLWUjw4IXYhd1oIR2ZvnP_Dzr_iGR-Th0cMIpmE2ntGeujWYH7-C6NHIzA/exec';
 
-// ── Universal date parser for phone formats (DD-MM-YYYY, DD/MM/YYYY) ──
-function parsePhoneDate(dateStr) {
-    if (!dateStr) return null;
-    
-    // Try different formats
-    let day, month, year;
-    
-    // Format: DD-MM-YYYY or DD/MM/YYYY
-    let match = dateStr.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
-    if (match) {
-        day = parseInt(match[1], 10);
-        month = parseInt(match[2], 10);
-        year = parseInt(match[3], 10);
-        return new Date(year, month - 1, day);
-    }
-    
-    // Format: YYYY-MM-DD (server format)
-    match = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-    if (match) {
-        year = parseInt(match[1], 10);
-        month = parseInt(match[2], 10);
-        day = parseInt(match[3], 10);
-        return new Date(year, month - 1, day);
-    }
-    
-    // Try native Date parsing as fallback
-    const d = new Date(dateStr);
-    if (!isNaN(d.getTime())) return d;
-    
-    return null;
-}
-
-// ── Convert phone date to server format (YYYY-MM-DD) for consistency ──
-function toServerDateFormat(dateStr) {
-    const date = parsePhoneDate(dateStr);
-    if (!date || isNaN(date.getTime())) return dateStr;
-    
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
 // ── Load pending from localStorage ───────────────────────────
 function getPending() {
     try { return JSON.parse(localStorage.getItem('itn_pending') || '[]'); } catch(e) { return []; }
@@ -228,39 +185,41 @@ function addLog(msg, type) {
     log.scrollTop = log.scrollHeight;
 }
 
-// ── Main sync (handles all date formats correctly) ────────────
+// ── Ensure _2026 suffix ───────────────────────────────────────
+function ensureSchoolSuffix(name) {
+    if (!name) return name;
+    const t = name.trim();
+    return t.endsWith('_2026') ? t : t + '_2026';
+}
+
+// ── Main sync ─────────────────────────────────────────────────
 let _syncing = false;
 
 async function startSync() {
     if (_syncing) return;
     if (!navigator.onLine) { alert('You are offline. Connect to internet first.'); return; }
 
-    const CUTOFF_DATE = new Date('2026-04-20'); // Server cutoff (YYYY-MM-DD)
+    const CUTOFF = new Date('2026-04-20');
     const allPending = getPending();
-    
     // Filter: only records with distribution_date >= 2026-04-20
-    // This properly handles phone formats (DD-MM-YYYY, DD/MM/YYYY)
     const pending = allPending.filter(function(r) {
-        const rawDate = r.distribution_date || r.timestamp || '';
-        if (!rawDate) return true; // include if no date
-        
-        const parsedDate = parsePhoneDate(rawDate);
-        if (!parsedDate || isNaN(parsedDate.getTime())) {
-            addLog('Warning: Could not parse date "' + rawDate + '" — including record anyway', 'info');
-            return true; // include unparseable dates to be safe
-        }
-        
-        // Compare dates (reset time to midnight for accurate comparison)
-        parsedDate.setHours(0, 0, 0, 0);
-        CUTOFF_DATE.setHours(0, 0, 0, 0);
-        
-        return parsedDate >= CUTOFF_DATE;
+        const raw = r.distribution_date || r.timestamp || '';
+        if (!raw) return true; // include if no date — safer to sync
+        try {
+            // Handle dd/mm/yyyy and yyyy-mm-dd formats
+            let d;
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+                const p = raw.split('/');
+                d = new Date(p[2]+'-'+p[1]+'-'+p[0]);
+            } else {
+                d = new Date(raw);
+            }
+            return !isNaN(d.getTime()) ? d >= CUTOFF : true;
+        } catch(e) { return true; }
     });
 
-    // Show filtered count with date info
-    addLog('📱 Phone date format accepted: DD-MM-YYYY or DD/MM/YYYY', 'info');
-    addLog('🗓️  Server cutoff: 2026-04-20 (YYYY-MM-DD)', 'info');
-    addLog('Total pending: ' + allPending.length + ', after date filter: ' + pending.length, 'info');
+    // Show filtered count
+    addLog('Total pending: ' + allPending.length + ', after date filter (≥ 20 Apr 2026): ' + pending.length, 'info');
 
     if (pending.length === 0) {
         addLog('No records on or after 20-Apr-2026 to sync.', 'info');
@@ -290,17 +249,10 @@ async function startSync() {
     for (let i = 0; i < pending.length; i++) {
         const rec = {...pending[i]};
         const school = rec.school_name || rec.school || '—';
-        
-        // Convert any date fields to server format (YYYY-MM-DD) before sending
-        if (rec.distribution_date) {
-            rec.distribution_date = toServerDateFormat(rec.distribution_date);
-        }
-        if (rec.timestamp) {
-            rec.timestamp = toServerDateFormat(rec.timestamp);
-        }
-        
-        // Ensure submission_timestamp exists
-        if (!rec.submission_timestamp) rec.submission_timestamp = new Date().toISOString();
+
+        // Apply _2026 suffix
+        if (rec.school_name) rec.school_name = ensureSchoolSuffix(rec.school_name);
+        if (!rec.submission_timestamp) rec.submission_timestamp = rec.timestamp || new Date().toISOString();
 
         // Update progress
         const pct = Math.round(((i) / total) * 100);
@@ -310,7 +262,7 @@ async function startSync() {
         document.getElementById('progDetail').textContent = school;
 
         try {
-            // Build checkDuplicate query with original school name (no suffix)
+            // 1. First check if already exists on server
             const dupKey = new URLSearchParams({
                 action:    'checkDuplicate',
                 district:  rec.district  || '',
@@ -336,12 +288,13 @@ async function startSync() {
                 addLog('ALREADY SYNCED: ' + school, 'skip');
                 results.push({ school, status: 'duplicate', msg: 'Already on server' });
                 duplicates++;
+                // Remove from remaining since it's already there
                 const idx = remaining.findIndex(r => r === pending[i]);
                 if (idx > -1) remaining.splice(idx, 1);
                 continue;
             }
 
-            // Submit to server - dates already converted to YYYY-MM-DD format
+            // 2. Submit to server
             const ctrl = new AbortController();
             const timer = setTimeout(() => ctrl.abort(), 15000);
             const res = await fetch(SCRIPT_URL, {
@@ -355,9 +308,10 @@ async function startSync() {
 
             const json = await res.json().catch(() => ({ success: true }));
             if (json.success !== false) {
-                addLog('✓ SYNCED: ' + school + ' (date: ' + rec.distribution_date + ')', 'ok');
+                addLog('SYNCED: ' + school, 'ok');
                 results.push({ school, status: 'synced', msg: 'Saved to server ✓' });
                 synced++;
+                // Remove from remaining
                 const idx = remaining.findIndex(r => r === pending[i]);
                 if (idx > -1) remaining.splice(idx, 1);
             } else {
@@ -365,11 +319,12 @@ async function startSync() {
             }
 
         } catch(e) {
-            addLog('✗ FAILED: ' + school + ' — ' + e.message, 'fail');
+            addLog('FAILED: ' + school + ' — ' + e.message, 'fail');
             results.push({ school, status: 'failed', msg: e.message });
             failed++;
         }
 
+        // Small delay to avoid hammering GAS
         await new Promise(r => setTimeout(r, 300));
     }
 
@@ -381,13 +336,15 @@ async function startSync() {
 
     // Save remaining pending (failed ones stay)
     savePending(remaining.filter(r => {
-        const schoolName = r.school_name || r.school || '';
-        return results.find(x => x.school === schoolName && x.status === 'failed');
+        // Keep failed ones
+        const school = r.school_name || r.school || '';
+        return results.find(x => x.school === school && x.status === 'failed');
     }));
 
     // Render results
     const hdr = document.getElementById('resultHdr');
-    const bodyEl = document.getElementById('resultBody');
+    const body = document.getElementById('resultBody');
+    const allGood = failed === 0;
     const hasFails = failed > 0;
     hdr.className = 'result-hdr ' + (hasFails ? 'partial' : 'success');
     hdr.innerHTML = (hasFails ? '⚠️' : '✅') + ' &nbsp;' +
@@ -395,12 +352,12 @@ async function startSync() {
         duplicates + ' Already Existed &nbsp;·&nbsp; ' +
         failed + ' Failed';
 
-    bodyEl.innerHTML = results.map(function(r) {
+    body.innerHTML = results.map(function(r) {
         const badgeClass = r.status === 'synced' ? 'badge-ok' : r.status === 'duplicate' ? 'badge-dup' : 'badge-fail';
         const badgeText  = r.status === 'synced' ? '✓ SYNCED' : r.status === 'duplicate' ? '↩ ALREADY SYNCED' : '✗ FAILED';
         return '<div class="result-row">' +
-            '<div style="flex:1;"><div class="result-school">' + escapeHtml(r.school) + '</div>' +
-            '<div class="result-meta">' + escapeHtml(r.msg) + '</div></div>' +
+            '<div style="flex:1;"><div class="result-school">' + r.school + '</div>' +
+            '<div class="result-meta">' + r.msg + '</div></div>' +
             '<span class="result-badge ' + badgeClass + '">' + badgeText + '</span>' +
             '</div>';
     }).join('');
@@ -409,22 +366,11 @@ async function startSync() {
 
     // Re-enable button
     _syncing = false;
-    const newPending = getPending();
-    document.getElementById('syncBtn').disabled = (newPending.length === 0 || !navigator.onLine);
+    document.getElementById('syncBtn').disabled = (remaining.length === 0 || !navigator.onLine);
     document.getElementById('syncBtn').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M21 2v6h-6M3 12a9 9 0 0115.36-6.36L21 8M3 22v-6h6M21 12a9 9 0 01-15.36 6.36L3 16"/></svg> SYNC AGAIN';
 
     refreshStats();
-    addLog('✅ Sync complete. ' + synced + ' synced, ' + duplicates + ' already existed, ' + failed + ' failed.', 'info');
-}
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-    });
+    addLog('Done. ' + synced + ' synced, ' + duplicates + ' already existed, ' + failed + ' failed.', 'info');
 }
 
 // Init
