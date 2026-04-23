@@ -622,7 +622,7 @@
                     const col=covColor(cov);
                     return`<tr>
                       <td style="color:#8090a0;font-size:11px;">${i+1}</td>
-                      <td style="font-weight:600;white-space:nowrap;">${s(r,'school_name','School Name')||'—'}</td>
+                      <td style="font-weight:600;white-space:nowrap;">${(function(v){return v.endsWith('_2026')?v.slice(0,-5):v;})(s(r,'school_name','School Name')||'—')}</td>
                       <td style="white-space:nowrap;">${s(r,'community','Community / Village')||'—'}</td>
                       <td style="white-space:nowrap;">${s(r,'district','District')||'—'}</td>
                       <td style="text-align:center;">${vp}</td>
@@ -743,7 +743,9 @@
                     const _c  = (r.chiefdom  ||r['Chiefdom']             ||'').trim().toLowerCase();
                     const _f  = (r.facility  ||r['Health Facility (PHU)']||'').trim().toLowerCase();
                     const _co = (r.community ||r['Community / Village']  ||'').trim().toLowerCase();
-                    const _sc = (r.school_name||r['School Name']         ||'').trim().toLowerCase();
+                    // Strip _2026 suffix for matching against CSV targets
+                    const _scRaw = (r.school_name||r['School Name']||'').trim().toLowerCase();
+                    const _sc = _scRaw.endsWith('_2026') ? _scRaw.slice(0,-5) : _scRaw;
                     return _d+'|'+_c+'|'+_f+'|'+_co+'|'+_sc;
                 })
         );
@@ -753,8 +755,172 @@
         const body = document.getElementById('targetsBody');
         if (!body) return;
 
+        // ── TAB SWITCHER ──────────────────────────────────────────
+        const existing = document.getElementById('targetsTabSwitcher');
+        if (!existing) {
+            const sw = document.createElement('div');
+            sw.id = 'targetsTabSwitcher';
+            sw.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid #e4eaf2;padding-bottom:12px;flex-wrap:wrap;';
+            const tabs = [
+                { id: 'targeted',   label: '📍 Schools Targeted',      color: '#10b981', bg: '#ecfdf5' },
+                { id: 'captured',   label: '⭐ Schools Captured (New)', color: '#f59e0b', bg: '#fffbf0' },
+                { id: 'overall',    label: '📊 Overall Coverage',      color: '#6366f1', bg: '#eef2ff' }
+            ];
+            tabs.forEach(function(t) {
+                const btn = document.createElement('button');
+                btn.innerHTML = t.label;
+                btn.style.cssText = 'border:none;background:'+t.bg+';color:'+t.color+';padding:8px 16px;border-radius:8px;font-family:Oswald,sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:all .2s;';
+                btn.onclick = function() {
+                    document.querySelectorAll('#targetsTabSwitcher button').forEach(b => b.style.opacity = '0.5');
+                    btn.style.opacity = '1';
+                    renderTargetsContent(t.id);
+                };
+                sw.appendChild(btn);
+            });
+            body.insertBefore(sw, body.firstChild);
+            tabs[0].btn = sw.children[0]; // mark first as active
+            sw.children[0].style.opacity = '1';
+        }
+
+        renderTargetsContent('targeted');
+    }
+
+    function toggleDistrict(el) {
+        const list = el.nextElementSibling;
+        const tog = el.querySelector('[data-tog]');
+        if (list.style.display === 'none') {
+            list.style.display = 'block';
+            tog.textContent = '▼';
+        } else {
+            list.style.display = 'none';
+            tog.textContent = '▶';
+        }
+    }
+
+    function renderTargetsByType(tree, submitted, category, title) {
+        const districts = Object.keys(tree).sort();
+        let totalSchools = 0, totalSubmitted = 0;
+
+        if (!districts.length) {
+            return '<div style="padding:40px 20px;text-align:center;color:#94a3b8;">No data available</div>';
+        }
+
+        // Count schools in category
+        for (const d in tree) {
+            for (const c in tree[d]) {
+                const schools = tree[d][c].schools || [];
+                schools.forEach(function(sch) {
+                    totalSchools++;
+                    const key = d.toLowerCase()+'|'+c.toLowerCase()+'|'+(sch.phu||'').toLowerCase()+'|'+(sch.com||'').toLowerCase()+'|'+(sch.name||'').toLowerCase();
+                    if (category.has(key)) totalSubmitted++;
+                });
+            }
+        }
+
+        const rate = totalSchools > 0 ? Math.round((totalSubmitted / totalSchools) * 100) : 0;
+
+        let html = '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);">' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">' +
+            '<div style="text-align:center;padding:12px;background:#f0fdf4;border-radius:8px;border-left:3px solid #10b981;">' +
+            '<div style="font-size:22px;font-weight:700;color:#10b981;">' + totalSchools + '</div>' +
+            '<div style="font-size:10px;color:#6b7280;letter-spacing:.4px;margin-top:4px;">TARGETED</div>' +
+            '</div>' +
+            '<div style="text-align:center;padding:12px;background:#ecfdf5;border-radius:8px;border-left:3px solid #06b6d4;">' +
+            '<div style="font-size:22px;font-weight:700;color:#06b6d4;">' + totalSubmitted + '</div>' +
+            '<div style="font-size:10px;color:#6b7280;letter-spacing:.4px;margin-top:4px;">ACHIEVED</div>' +
+            '</div>' +
+            '<div style="text-align:center;padding:12px;background:#fffbf0;border-radius:8px;border-left:3px solid #f59e0b;">' +
+            '<div style="font-size:22px;font-weight:700;color:#f59e0b;">' + rate + '%</div>' +
+            '<div style="font-size:10px;color:#6b7280;letter-spacing:.4px;margin-top:4px;">COVERAGE</div>' +
+            '</div></div>';
+
+        districts.forEach(function(d) {
+            const chiefdoms = Object.keys(tree[d]).sort();
+            let dTotal = 0, dSubmitted = 0;
+            
+            chiefdoms.forEach(function(c) {
+                const schools = tree[d][c].schools || [];
+                schools.forEach(function(sch) {
+                    dTotal++;
+                    const key = d.toLowerCase()+'|'+c.toLowerCase()+'|'+(sch.phu||'').toLowerCase()+'|'+(sch.com||'').toLowerCase()+'|'+(sch.name||'').toLowerCase();
+                    if (category.has(key)) dSubmitted++;
+                });
+            });
+
+            const dRate = dTotal > 0 ? Math.round((dSubmitted / dTotal) * 100) : 0;
+
+            html += '<div style="border-radius:10px;overflow:hidden;margin-bottom:10px;background:#f9fafb;border:1px solid #e5e7eb;">' +
+                '<div style="padding:12px;background:linear-gradient(135deg,#f0fdf4,#e0f8f4);cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;" onclick="toggleDistrict(this)">' +
+                '<div><div style="font-size:12px;font-weight:700;color:#047857;letter-spacing:.5px;">' + d.toUpperCase() + '</div>' +
+                '<div style="font-size:9px;color:#6b7280;margin-top:3px;">' + dSubmitted + '/' + dTotal + ' | ' + dRate + '%</div></div>' +
+                '<span data-tog style="font-size:14px;">▼</span></div>' +
+                '<div style="padding:10px;">';
+
+            chiefdoms.forEach(function(c) {
+                let cTotal = 0, cSubmitted = 0;
+                const schools = tree[d][c].schools || [];
+                schools.forEach(function(sch) {
+                    cTotal++;
+                    const key = d.toLowerCase()+'|'+c.toLowerCase()+'|'+(sch.phu||'').toLowerCase()+'|'+(sch.com||'').toLowerCase()+'|'+(sch.name||'').toLowerCase();
+                    if (category.has(key)) cSubmitted++;
+                });
+
+                const cRate = cTotal > 0 ? Math.round((cSubmitted / cTotal) * 100) : 0;
+                html += '<div style="background:#fff;border-radius:8px;padding:10px;margin-bottom:6px;border-left:3px solid #06b6d4;font-size:11px;font-weight:600;color:#0d9488;">' + c +
+                    '<div style="font-size:9px;color:#6b7280;margin-top:4px;font-weight:400;">' + cSubmitted + '/' + cTotal + ' schools | ' + cRate + '%</div></div>';
+            });
+
+            html += '</div></div>';
+        });
+
+        return html + '</div>';
+    }
+
+            function renderTargetsContent(tabType) {
+        const body = document.getElementById('targetsBody');
+        const contentId = 'targetsContent-' + tabType;
+        let contentDiv = document.getElementById(contentId);
+        if (!contentDiv) {
+            contentDiv = document.createElement('div');
+            contentDiv.id = contentId;
+            // Remove old content divs
+            Array.from(body.querySelectorAll('[id^="targetsContent-"]')).forEach(d => d.remove());
+            body.appendChild(contentDiv);
+        }
+
         const tree      = buildTargetsTree();
         const submitted = getSubmittedSet();
+        const districts = Object.keys(tree).sort();
+        const allRows   = mergeData(_sheetRows || []);
+
+        // Segregate by New School status
+        const targetedSchools = new Set();
+        const capturedSchools = new Set();
+        allRows.forEach(function(r) {
+            const isNew = (r['New School'] || r.new_school || 'No').toString().trim().toLowerCase() === 'yes';
+            const _d  = (r.district  ||r['District']||'').trim().toLowerCase();
+            const _c  = (r.chiefdom  ||r['Chiefdom']||'').trim().toLowerCase();
+            const _f  = (r.facility  ||r['Health Facility (PHU)']||'').trim().toLowerCase();
+            const _co = (r.community ||r['Community / Village']||'').trim().toLowerCase();
+            const _sc = (r.school_name||r['School Name']||'').trim().toLowerCase().replace(/_2026$/i,'');
+            const key = _d+'|'+_c+'|'+_f+'|'+_co+'|'+_sc;
+            if (isNew) capturedSchools.add(key); else targetedSchools.add(key);
+        });
+
+        let html = '';
+
+        if (tabType === 'targeted') {
+            html = renderTargetsByType(tree, submitted, targetedSchools, 'Targeted Schools');
+        } else if (tabType === 'captured') {
+            html = renderTargetsByType(tree, submitted, capturedSchools, 'New Schools Captured');
+        } else {
+            html = renderTargetsByType(tree, submitted, new Set([...targetedSchools, ...capturedSchools]), 'All Schools');
+        }
+
+        contentDiv.innerHTML = html;
+    }
+
+    function renderTargetsByType(tree, submitted, category, title) {
         const districts = Object.keys(tree).sort();
 
         if (!districts.length) {
@@ -1283,10 +1449,30 @@
                 });
             });
 
+            // Fallback: build PHU tree from ALL_LOCATION_DATA if dms_cascading.csv failed
             if (!Object.keys(csvTree).length) {
-                body.innerHTML='<div style="padding:24px;font-family:Oswald,sans-serif;color:#607080;font-size:13px;text-align:center;">No location data — ensure dms_cascading.csv is in the repo</div>';
+                console.warn('[DMS/PHU] dms_cascading.csv empty — using ALL_LOCATION_DATA as fallback');
+                const loc = window.ALL_LOCATION_DATA || {};
+                for (const dist in loc) {
+                    const d = dist.trim();
+                    for (const ch in loc[dist]) {
+                        const c = ch.trim();
+                        for (const fac in loc[dist][ch]) {
+                            const f = fac.trim();
+                            if (!d||!c||!f) continue;
+                            if (!csvTree[d]) csvTree[d]={};
+                            if (!csvTree[d][c]) csvTree[d][c]=[];
+                            if (!csvTree[d][c].includes(f)) csvTree[d][c].push(f);
+                        }
+                    }
+                }
+            }
+
+            if (!Object.keys(csvTree).length) {
+                body.innerHTML='<div style="padding:24px;font-family:Oswald,sans-serif;color:#607080;font-size:13px;text-align:center;">No location data available — ensure cascading data is loaded</div>';
                 return;
             }
+            console.log('[DMS/PHU] csvTree ready:', Object.keys(csvTree).length, 'districts');
 
             // 2. Fetch ITN Movement and PHU Receipts from GAS
             const gasUrl = 'https://script.google.com/macros/s/AKfycbymRy-M5v0fVLWUjw4IXYhd1oIR2ZvnP_Dzr_iGR-Th0cMIpmE2ntGeujWYH7-C6NHIzA/exec';
