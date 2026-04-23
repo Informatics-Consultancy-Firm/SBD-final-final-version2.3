@@ -27,6 +27,7 @@ body{font-family:'Oswald',sans-serif;background:#f0f4f8;min-height:100vh;}
 .target .sum-val{color:#10b981;}
 .distributed .sum-val{color:#06b6d4;}
 .rate .sum-val{color:#f59e0b;}
+.sum-sub{font-size:9px;color:#94a3b8;margin-top:3px;font-weight:400;}
 
 .section-hdr{font-size:13px;font-weight:700;color:#047857;letter-spacing:.5px;margin:20px 0 12px 0;text-transform:uppercase;border-bottom:2px solid #d1fae5;padding-bottom:8px;}
 
@@ -59,7 +60,11 @@ body{font-family:'Oswald',sans-serif;background:#f0f4f8;min-height:100vh;}
 .empty{text-align:center;padding:40px 20px;color:#6b7280;}
 .empty svg{width:44px;height:44px;margin-bottom:12px;opacity:.5;}
 
-.debug{background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:12px;margin:16px 0;font-size:12px;color:#92400e;font-family:monospace;max-height:200px;overflow-y:auto;}
+@media (max-width:600px) {
+    .summary-grid{grid-template-columns:1fr 1fr;}
+    .dist-table{font-size:10px;}
+    .dist-table th, .dist-table td{padding:8px;}
+}
 </style>
 </head>
 <body>
@@ -72,29 +77,27 @@ body{font-family:'Oswald',sans-serif;background:#f0f4f8;min-height:100vh;}
   </div>
   <div>
     <div class="hdr-title">ITN Targets</div>
-    <div class="hdr-sub">Planned Enrollment vs Actual Distribution by District & Chiefdom</div>
+    <div class="hdr-sub">Planned Enrollment (Old Schools) vs Actual Distribution (All Submissions) by District & Chiefdom</div>
   </div>
 </div>
 
 <div class="body">
 
-  <div class="debug" id="debugLog">
-    <strong>Debug Log:</strong><br>
-    Loading... please wait
-  </div>
-
   <div class="summary-grid">
     <div class="summary-card target">
-      <div class="sum-lbl">Planned Target (Old Schools)</div>
+      <div class="sum-lbl">Planned Target</div>
       <div class="sum-val" id="totalTarget">—</div>
+      <div class="sum-sub">(Old Schools Only)</div>
     </div>
     <div class="summary-card distributed">
       <div class="sum-lbl">ITNs Distributed</div>
       <div class="sum-val" id="totalDistributed">—</div>
+      <div class="sum-sub">(All Submissions)</div>
     </div>
     <div class="summary-card rate">
       <div class="sum-lbl">Overall Achievement %</div>
       <div class="sum-val" id="achievementRate">—%</div>
+      <div class="sum-sub">(Distributed / Target)</div>
     </div>
   </div>
 
@@ -128,25 +131,18 @@ body{font-family:'Oswald',sans-serif;background:#f0f4f8;min-height:100vh;}
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymRy-M5v0fVLWUjw4IXYhd1oIR2ZvnP_Dzr_iGR-Th0cMIpmE2ntGeujWYH7-C6NHIzA/exec';
 
-function addDebug(msg) {
-    const log = document.getElementById('debugLog');
-    log.innerHTML += '<br>' + msg;
-    log.scrollTop = log.scrollHeight;
-    console.log('[ITN Targets Debug]', msg);
-}
-
 async function loadData() {
     try {
-        addDebug('1. Starting load...');
+        console.log('[ITN Targets] Starting load...');
 
         // 1. Load cascading_data.csv
-        addDebug('2. Fetching cascading_data.csv...');
+        console.log('[ITN Targets] Fetching cascading_data.csv...');
         const csvRes = await fetch('./cascading_data.csv');
         if (!csvRes.ok) {
-            throw new Error('cascading_data.csv not found (HTTP ' + csvRes.status + '). Make sure file is in repo root.');
+            throw new Error('cascading_data.csv not found (HTTP ' + csvRes.status + '). Ensure file is in repo root.');
         }
         const csvText = await csvRes.text();
-        addDebug('3. CSV fetched, size: ' + csvText.length + ' bytes');
+        console.log('[ITN Targets] CSV loaded, parsing...');
         
         const csvTree = {};
         let csvRowCount = 0;
@@ -162,13 +158,12 @@ async function loadData() {
                 
                 const dist = (data.District || '').trim();
                 const chf = (data.Chiefdom || '').trim();
-                const phu = (data['Name of PHU'] || '').trim();
                 const school = (data['School Name'] || '').trim();
                 const enroll = parseFloat(data['School Enrollment'] || 0) || 0;
                 const status = (data['School Status'] || 'Old').trim();
                 
-                // Only count OLD schools
-                if (status.toLowerCase() !== 'old' && status !== 'No') return;
+                // Only count OLD schools for TARGET
+                if (status.toLowerCase() !== 'old' && status.toLowerCase() !== 'no') return;
                 csvOldCount++;
                 
                 if (!dist || !chf || enroll === 0) return;
@@ -180,25 +175,22 @@ async function loadData() {
             }
         });
 
-        addDebug('4. CSV parsed: ' + csvRowCount + ' rows, ' + csvOldCount + ' with status=Old');
-        addDebug('5. CSV tree districts: ' + Object.keys(csvTree).join(', '));
+        console.log('[ITN Targets] CSV parsed: ' + csvRowCount + ' total rows, ' + csvOldCount + ' with status=Old');
+        console.log('[ITN Targets] Districts in target:', Object.keys(csvTree).join(', '));
 
         // 2. Load submissions data
-        addDebug('6. Fetching submissions from GAS...');
+        console.log('[ITN Targets] Fetching submissions from GAS...');
         const sub = await fetch(SCRIPT_URL + '?action=getData')
-            .then(r => {
-                addDebug('7. GAS response status: ' + r.status);
-                return r.json();
-            })
+            .then(r => r.json())
             .catch(e => {
-                addDebug('ERROR fetching GAS: ' + e.message);
+                console.error('[ITN Targets] GAS error:', e);
                 return { data: [] };
             });
         
         const submissions = sub.data || [];
-        addDebug('8. Submissions received: ' + submissions.length + ' records');
+        console.log('[ITN Targets] Submissions received: ' + submissions.length + ' records');
 
-        // 3. Build distributed data
+        // 3. Build distributed data - ALL submissions (Old + New)
         const distributedTree = {};
         submissions.forEach(function(s) {
             const dist = (s.district || s.District || '').trim();
@@ -212,10 +204,12 @@ async function loadData() {
             distributedTree[dist][chf] += itnDist;
         });
 
-        addDebug('9. Distributed tree districts: ' + Object.keys(distributedTree).join(', '));
+        console.log('[ITN Targets] Distributed (all submissions) - Districts:', Object.keys(distributedTree).join(', '));
 
-        // 4. Merge
+        // 4. Merge: targets from CSV + distributed from ALL submissions
         const merged = {};
+        
+        // Add all districts from CSV (targets - Old schools only)
         for (const d in csvTree) {
             if (!merged[d]) merged[d] = {};
             for (const c in csvTree[d]) {
@@ -224,6 +218,7 @@ async function loadData() {
             }
         }
         
+        // Add distributed from ALL submissions
         for (const d in distributedTree) {
             if (!merged[d]) merged[d] = {};
             for (const c in distributedTree[d]) {
@@ -232,15 +227,13 @@ async function loadData() {
             }
         }
 
-        addDebug('10. Merged tree has ' + Object.keys(merged).length + ' districts');
-
         if (!Object.keys(merged).length) {
-            addDebug('ERROR: No data to display');
+            console.error('[ITN Targets] No data to display');
             document.getElementById('emptyState').style.display = 'block';
             return;
         }
 
-        // 5. Calculate totals
+        // 5. Calculate totals and render
         let totalTarget = 0, totalDist = 0;
         const districtSummary = {};
         
@@ -259,7 +252,7 @@ async function loadData() {
         document.getElementById('totalDistributed').textContent = totalDist.toLocaleString();
         document.getElementById('achievementRate').textContent = rate;
 
-        addDebug('11. Totals: Target=' + totalTarget + ', Distributed=' + totalDist + ', Rate=' + rate + '%');
+        console.log('[ITN Targets] Totals: Target=' + totalTarget + ' (Old schools), Distributed=' + totalDist + ' (all submissions), Rate=' + rate + '%');
 
         // 6. Render district summary table
         const tbody = document.getElementById('districtSummaryBody');
@@ -316,8 +309,8 @@ async function loadData() {
                 cItem.className = 'chiefdom-item';
                 cItem.innerHTML = '<div class="chiefdom-name">' + chf + '</div>' +
                     '<div style="font-size:10px;color:#6b7280;margin-top:3px;">' +
-                    'Target: <strong>' + c.target + '</strong> pupils | ' +
-                    'Distributed: <strong>' + c.distributed + '</strong> ITNs</div>' +
+                    'Target: <strong>' + c.target + '</strong> pupils (Old) | ' +
+                    'Distributed: <strong>' + c.distributed + '</strong> ITNs (all submissions)</div>' +
                     '<div class="chiefdom-progress">' +
                     '<div class="progress-bar"><div class="progress-fill" style="width:' + Math.min(cRate, 100) + '%"></div></div>' +
                     '<div class="progress-text"><span>' + cRate + '% achievement</span></div>' +
@@ -328,15 +321,11 @@ async function loadData() {
             container.appendChild(dWrap);
         });
 
-        addDebug('12. ✅ DATA LOADED SUCCESSFULLY');
-        document.getElementById('debugLog').style.background = '#dcfce7';
-        document.getElementById('debugLog').style.color = '#166534';
+        console.log('[ITN Targets] ✅ Data loaded successfully');
 
     } catch(e) {
-        addDebug('❌ ERROR: ' + e.message);
+        console.error('[ITN Targets] ERROR:', e.message);
         document.getElementById('emptyState').style.display = 'block';
-        document.getElementById('debugLog').style.background = '#fee2e2';
-        document.getElementById('debugLog').style.color = '#991b1b';
     }
 }
 
