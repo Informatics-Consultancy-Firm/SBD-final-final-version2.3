@@ -2,320 +2,678 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>ICF-SL · ITN Targets</title>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+<title>ICF-SL · ITN Targets Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Oswald',sans-serif;background:#f0f4f8;min-height:100vh;}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-.hdr{background:linear-gradient(135deg,#059669,#10b981);padding:16px 20px;display:flex;align-items:center;gap:14px;color:#fff;}
-.hdr-icon{width:42px;height:42px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;}
-.hdr-title{font-size:16px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;}
-.hdr-sub{font-size:10px;color:rgba(255,255,255,.7);margin-top:2px;}
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f4f7fc;
+  min-height: 100vh;
+  color: #0b2b26;
+}
 
-.body{padding:16px;max-width:900px;margin:0 auto;}
+/* Header */
+.dashboard-header {
+  background: linear-gradient(115deg, #0f3b2c, #1e6f5c);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+}
+.header-icon {
+  background: rgba(255,255,255,0.18);
+  width: 52px;
+  height: 52px;
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.header-text h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: white;
+}
+.header-text p {
+  font-size: 0.75rem;
+  color: #cbf7e5;
+  font-weight: 500;
+  margin-top: 4px;
+}
 
-/* Summary cards */
-.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;}
-.summary-card{background:#fff;border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid;}
-.summary-card.target{border-color:#10b981;}
-.summary-card.distributed{border-color:#06b6d4;}
-.summary-card.rate{border-color:#f59e0b;}
-.sum-val{font-size:24px;font-weight:700;margin:6px 0;}
-.sum-lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;}
-.target .sum-val{color:#10b981;}
-.distributed .sum-val{color:#06b6d4;}
-.rate .sum-val{color:#f59e0b;}
+/* Main container */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
 
-/* Section header */
-.section-hdr{font-size:13px;font-weight:700;color:#047857;letter-spacing:.5px;margin:20px 0 12px 0;text-transform:uppercase;border-bottom:2px solid #d1fae5;padding-bottom:8px;}
+/* KPI row */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 18px;
+  margin-bottom: 32px;
+}
+.kpi-card {
+  background: white;
+  border-radius: 28px;
+  padding: 20px 16px;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.04);
+  transition: transform 0.1s ease;
+  border-bottom: 4px solid;
+}
+.kpi-card.target { border-bottom-color: #2c8c6e; }
+.kpi-card.distributed { border-bottom-color: #3b82b6; }
+.kpi-card.rate { border-bottom-color: #eab308; }
+.kpi-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #5b6e6a;
+}
+.kpi-value {
+  font-size: 2.1rem;
+  font-weight: 800;
+  margin: 10px 0 2px;
+  color: #1a3c34;
+}
+.target .kpi-value { color: #1f8a6b; }
+.distributed .kpi-value { color: #2c6e9e; }
+.rate .kpi-value { color: #ca8a04; }
 
-/* District summary table */
-.dist-table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:20px;}
-.dist-table th{background:linear-gradient(135deg,#ecfdf5,#f0fdf4);padding:12px;text-align:left;font-size:11px;font-weight:700;color:#047857;letter-spacing:.4px;border-bottom:1px solid #d1fae5;}
-.dist-table td{padding:11px 12px;border-bottom:1px solid #f0f4f8;font-size:11px;}
-.dist-table tr:hover{background:#f9fafb;}
-.dist-table tr:last-child td{border-bottom:none;}
-.dist-name{font-weight:700;color:#0d9488;}
-.dist-num{text-align:right;color:#6b7280;}
-.dist-rate{text-align:right;font-weight:600;color:#f59e0b;}
+/* section headers */
+.section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #1f5e4f;
+  background: #e6f4ef;
+  display: inline-block;
+  padding: 5px 18px;
+  border-radius: 40px;
+  margin: 20px 0 18px 0;
+}
 
-/* District accordion */
-.district-wrap{background:#fff;border-radius:12px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;}
-.district-hdr{padding:14px 16px;background:linear-gradient(135deg,#ecfdf5,#f0fdf4);border-bottom:1px solid #d1fae5;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;}
-.district-hdr:hover{background:linear-gradient(135deg,#d1fae5,#e0f8f4);}
-.district-name{font-size:13px;font-weight:700;color:#047857;letter-spacing:.5px;}
-.district-stats{font-size:10px;color:#6b7280;margin-top:3px;}
-.district-toggle{font-size:18px;transition:transform .2s;}
-.district-toggle.open{transform:rotate(180deg);}
+/* district summary table (clean) */
+.district-summary-wrapper {
+  background: white;
+  border-radius: 24px;
+  overflow-x: auto;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+  margin-bottom: 28px;
+}
+.district-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.district-table th {
+  text-align: left;
+  padding: 16px 16px;
+  background: #f9fefb;
+  font-weight: 700;
+  color: #1f6e5a;
+  border-bottom: 2px solid #cfece3;
+}
+.district-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #ecf3f0;
+  font-weight: 500;
+}
+.district-table tr:hover td {
+  background-color: #fafff7;
+}
+.district-name-cell {
+  font-weight: 700;
+  color: #146b58;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.district-name-cell:hover {
+  color: #0a4b3e;
+  text-decoration: underline;
+}
+.district-expand-icon {
+  font-size: 1rem;
+  transition: transform 0.2s;
+  display: inline-block;
+  width: 20px;
+}
+.numeric-cell {
+  text-align: right;
+  font-weight: 600;
+}
+.rate-cell {
+  text-align: right;
+  font-weight: 700;
+  color: #c97e0a;
+}
 
-.chiefdom-list{display:none;padding:12px 16px;}
-.chiefdom-list.show{display:block;}
-.chiefdom-item{background:#f9fafb;border-radius:10px;padding:10px;margin-bottom:8px;border-left:3px solid #06b6d4;}
-.chiefdom-name{font-size:11px;font-weight:700;color:#0d9488;letter-spacing:.4px;}
-.chiefdom-progress{margin-top:6px;}
-.progress-bar{height:6px;background:#dbeafe;border-radius:3px;overflow:hidden;}
-.progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#06b6d4,#14b8a6);transition:width .3s;}
-.progress-text{font-size:9px;color:#6b7280;margin-top:3px;display:flex;justify-content:space-between;}
+/* Accordion chiefdom panel (clickable district details) */
+.chiefdom-accordion {
+  background: white;
+  border-radius: 24px;
+  margin-top: 8px;
+  margin-bottom: 32px;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+.accordion-header {
+  background: #ffffff;
+  padding: 18px 24px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2efe9;
+  transition: background 0.2s;
+}
+.accordion-header:hover {
+  background: #f6fdf9;
+}
+.accordion-title {
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: -0.2px;
+  color: #146b58;
+}
+.accordion-stats {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #4d7870;
+  margin-top: 4px;
+}
+.accordion-icon {
+  font-size: 1.5rem;
+  color: #1e8f74;
+  transition: transform 0.25s;
+}
+.chiefdom-panel {
+  display: none;
+  padding: 8px 20px 20px 20px;
+  background: #fefefe;
+  border-top: 1px solid #e9f3ef;
+}
+.chiefdom-panel.open {
+  display: block;
+}
+.chiefdom-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.chiefdom-card {
+  background: #fafefc;
+  border-radius: 20px;
+  padding: 16px 18px;
+  border-left: 5px solid #38b2a0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  transition: all 0.1s;
+}
+.chiefdom-name {
+  font-weight: 800;
+  font-size: 1rem;
+  color: #1d5b4b;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.chiefdom-numbers {
+  display: flex;
+  gap: 24px;
+  margin: 12px 0 10px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+.chiefdom-numbers span {
+  background: #eef6f2;
+  padding: 4px 12px;
+  border-radius: 30px;
+}
+.progress-container {
+  margin-top: 12px;
+}
+.progress-bar-bg {
+  background: #e2e8f0;
+  border-radius: 40px;
+  height: 8px;
+  overflow: hidden;
+}
+.progress-fill {
+  background: linear-gradient(90deg, #2c9d86, #43c6ac);
+  width: 0%;
+  height: 100%;
+  border-radius: 40px;
+}
+.progress-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-top: 6px;
+  color: #5a7c72;
+}
 
-/* Empty state */
-.empty{text-align:center;padding:40px 20px;color:#6b7280;}
-.empty svg{width:44px;height:44px;margin-bottom:12px;opacity:.5;}
+.empty-state {
+  text-align: center;
+  background: white;
+  padding: 48px 24px;
+  border-radius: 32px;
+  color: #819b92;
+}
 
-@media (max-width:600px) {
-    .summary-grid{grid-template-columns:1fr 1fr;}
-    .dist-table{font-size:10px;}
-    .dist-table th, .dist-table td{padding:8px;}
+/* responsiveness */
+@media (max-width: 680px) {
+  .container {
+    padding: 16px;
+  }
+  .district-table th, .district-table td {
+    padding: 10px 10px;
+  }
+  .kpi-value {
+    font-size: 1.6rem;
+  }
 }
 </style>
 </head>
 <body>
 
-<div class="hdr">
-  <div class="hdr-icon">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
-      <path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999H6.6A2 2 0 003 15z"/>
+<div class="dashboard-header">
+  <div class="header-icon">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+      <circle cx="12" cy="12" r="3"/>
     </svg>
   </div>
-  <div>
-    <div class="hdr-title">ITN Targets</div>
-    <div class="hdr-sub">Planned Enrollment vs Actual Distribution by District & Chiefdom</div>
+  <div class="header-text">
+    <h1>ICF-SL · ITN TARGETS</h1>
+    <p>Planned Enrollment (Old Schools) vs ITNs Distributed | District & Chiefdom Level</p>
   </div>
 </div>
 
-<div class="body">
-
-  <!-- Overall Summary -->
-  <div class="summary-grid">
-    <div class="summary-card target">
-      <div class="sum-lbl">Planned Target (Old Schools)</div>
-      <div class="sum-val" id="totalTarget">—</div>
+<div class="container">
+  <!-- KPI cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card target">
+      <div class="kpi-label">📋 Planned target (Old schools)</div>
+      <div class="kpi-value" id="totalTargetVal">—</div>
     </div>
-    <div class="summary-card distributed">
-      <div class="sum-lbl">ITNs Distributed</div>
-      <div class="sum-val" id="totalDistributed">—</div>
+    <div class="kpi-card distributed">
+      <div class="kpi-label">🦟 ITNs Distributed</div>
+      <div class="kpi-value" id="totalDistributedVal">—</div>
     </div>
-    <div class="summary-card rate">
-      <div class="sum-lbl">Overall Achievement %</div>
-      <div class="sum-val" id="achievementRate">—%</div>
+    <div class="kpi-card rate">
+      <div class="kpi-label">🎯 Overall Achievement</div>
+      <div class="kpi-value" id="achievementRateVal">—%</div>
     </div>
   </div>
 
-  <!-- District Summary Table -->
-  <div class="section-hdr">📊 Summary by District</div>
-  <table class="dist-table" id="districtSummaryTable">
-    <thead>
-      <tr>
-        <th>District</th>
-        <th style="text-align:right;">Planned Target</th>
-        <th style="text-align:right;">ITNs Distributed</th>
-        <th style="text-align:right;">Achievement %</th>
-      </tr>
-    </thead>
-    <tbody id="districtSummaryBody">
-      <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:20px;">Loading data...</td></tr>
-    </tbody>
-  </table>
-
-  <!-- Detailed Chiefdom Breakdown -->
-  <div class="section-hdr">🔍 Detailed by Chiefdom (Click District to Expand)</div>
-  <div id="districtsContainer"></div>
-
-  <!-- Empty -->
-  <div class="empty" id="emptyState" style="display:none;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999H6.6A2 2 0 003 15z"/>
-    </svg>
-    <div style="font-size:13px;color:#6b7280;letter-spacing:.5px;">No data available</div>
+  <!-- District Summary Table (Clickable rows to expand chiefdoms) -->
+  <div class="section-title">📊 SUMMARY BY DISTRICT (click district to expand)</div>
+  <div class="district-summary-wrapper">
+    <table class="district-table" id="districtSummaryTable">
+      <thead>
+        <tr><th>District</th><th style="text-align:right;">Planned Target</th><th style="text-align:right;">ITNs Distributed</th><th style="text-align:right;">Achievement %</th></tr>
+      </thead>
+      <tbody id="districtSummaryBody">
+        <tr><td colspan="4" style="text-align:center;padding:32px;">Loading data from cascading_data.csv and submissions...</td></tr>
+      </tbody>
+    </table>
   </div>
 
+  <!-- Dynamic district accordion panels (chiefdom detail) will be injected here -->
+  <div id="districtDetailContainer"></div>
+
+  <div id="emptyMessage" style="display:none;" class="empty-state">
+    ⚠️ No valid data found. Please ensure cascading_data.csv (with 'Old' schools) and submissions exist.
+  </div>
 </div>
 
 <script>
+// --------------------------------------------------------------
+// CONFIGURATION
+// --------------------------------------------------------------
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymRy-M5v0fVLWUjw4IXYhd1oIR2ZvnP_Dzr_iGR-Th0cMIpmE2ntGeujWYH7-C6NHIzA/exec';
 
-async function loadData() {
-    try {
-        // 1. Load cascading_data.csv to get OLD SCHOOLS targets
-        const csvRes = await fetch('./cascading_data.csv');
-        const csvText = await csvRes.text();
-        
-        const csvTree = {};
-        Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            step: function(row) {
-                const data = row.data;
-                if (!data || !data[0]) return;
-                
-                const dist = (data.District || '').trim();
-                const chf = (data.Chiefdom || '').trim();
-                const phu = (data['Name of PHU'] || '').trim();
-                const school = (data['School Name'] || '').trim();
-                const enroll = parseFloat(data['School Enrollment'] || 0) || 0;
-                const status = (data['School Status'] || 'Old').trim();
-                
-                // Only count OLD schools
-                if (status.toLowerCase() !== 'old' && status !== 'No') return;
-                
-                if (!dist || !chf || enroll === 0) return;
-                if (!csvTree[dist]) csvTree[dist] = {};
-                if (!csvTree[dist][chf]) csvTree[dist][chf] = { target: 0, schools: [] };
-                
-                csvTree[dist][chf].target += enroll;
-                csvTree[dist][chf].schools.push(school);
-            }
-        });
+// global data containers
+let mergedDistrictChiefdom = {};    // { district: { chiefdom: { target, distributed } } }
+let districtTotalsMap = {};         // { district: { target, distributed } }
 
-        console.log('[ITN Targets] CSV tree built:', csvTree);
-
-        // 2. Load submissions data to get DISTRIBUTED ITNs
-        const sub = await fetch(SCRIPT_URL + '?action=getData')
-            .then(r => r.json()).catch(() => ({ data: [] }));
-        const submissions = sub.data || [];
-
-        console.log('[ITN Targets] Submissions loaded:', submissions.length, 'records');
-
-        // 3. Build distributed data by district/chiefdom
-        const distributedTree = {};
-        submissions.forEach(function(s) {
-            const dist = (s.district || s.District || '').trim();
-            const chf = (s.chiefdom || s.Chiefdom || '').trim();
-            const itnDist = parseFloat(s.total_itn || s['Total ITNs'] || 0) || 0;
-            
-            if (!dist || !chf || itnDist === 0) return;
-            if (!distributedTree[dist]) distributedTree[dist] = {};
-            if (!distributedTree[dist][chf]) distributedTree[dist][chf] = 0;
-            
-            distributedTree[dist][chf] += itnDist;
-        });
-
-        console.log('[ITN Targets] Distributed tree built:', distributedTree);
-
-        // 4. Merge: targets from CSV + distributed from submissions
-        const merged = {};
-        
-        // Add all districts from CSV (targets)
-        for (const d in csvTree) {
-            if (!merged[d]) merged[d] = {};
-            for (const c in csvTree[d]) {
-                if (!merged[d][c]) merged[d][c] = { target: 0, distributed: 0 };
-                merged[d][c].target = csvTree[d][c].target;
-            }
-        }
-        
-        // Add distributed from submissions
-        for (const d in distributedTree) {
-            if (!merged[d]) merged[d] = {};
-            for (const c in distributedTree[d]) {
-                if (!merged[d][c]) merged[d][c] = { target: 0, distributed: 0 };
-                merged[d][c].distributed = distributedTree[d][c];
-            }
-        }
-
-        if (!Object.keys(merged).length) {
-            document.getElementById('emptyState').style.display = 'block';
-            return;
-        }
-
-        // 5. Calculate totals and render
-        let totalTarget = 0, totalDist = 0;
-        const districtSummary = {};
-        
-        for (const d in merged) {
-            districtSummary[d] = { target: 0, distributed: 0 };
-            for (const c in merged[d]) {
-                districtSummary[d].target += merged[d][c].target;
-                districtSummary[d].distributed += merged[d][c].distributed;
-                totalTarget += merged[d][c].target;
-                totalDist += merged[d][c].distributed;
-            }
-        }
-        
-        const rate = totalTarget > 0 ? Math.round((totalDist / totalTarget) * 100) : 0;
-        document.getElementById('totalTarget').textContent = totalTarget.toLocaleString();
-        document.getElementById('totalDistributed').textContent = totalDist.toLocaleString();
-        document.getElementById('achievementRate').textContent = rate;
-
-        console.log('[ITN Targets] Totals: Target=' + totalTarget + ', Distributed=' + totalDist + ', Rate=' + rate + '%');
-
-        // 6. Render district summary table
-        const tbody = document.getElementById('districtSummaryBody');
-        tbody.innerHTML = '';
-        Object.keys(districtSummary).sort().forEach(function(dist) {
-            const ds = districtSummary[dist];
-            const dRate = ds.target > 0 ? Math.round((ds.distributed / ds.target) * 100) : 0;
-            const row = document.createElement('tr');
-            row.innerHTML = '<td class="dist-name">' + dist.toUpperCase() + '</td>' +
-                '<td class="dist-num">' + ds.target.toLocaleString() + '</td>' +
-                '<td class="dist-num">' + ds.distributed.toLocaleString() + '</td>' +
-                '<td class="dist-rate">' + dRate + '%</td>';
-            tbody.appendChild(row);
-        });
-
-        // 7. Render detailed chiefdom accordions
-        const container = document.getElementById('districtsContainer');
-        container.innerHTML = '';
-        Object.keys(merged).sort().forEach(function(dist) {
-            const distData = merged[dist];
-            const chiefdoms = Object.keys(distData).sort();
-            
-            // District totals
-            let dTarget = 0, dDist = 0;
-            chiefdoms.forEach(c => {
-                dTarget += distData[c].target;
-                dDist += distData[c].distributed;
-            });
-            const dRate = dTarget > 0 ? Math.round((dDist / dTarget) * 100) : 0;
-
-            const dWrap = document.createElement('div');
-            dWrap.className = 'district-wrap';
-            
-            const dHdr = document.createElement('div');
-            dHdr.className = 'district-hdr';
-            dHdr.onclick = function() {
-                const list = dWrap.querySelector('.chiefdom-list');
-                const tog = dWrap.querySelector('.district-toggle');
-                list.classList.toggle('show');
-                tog.classList.toggle('open');
-            };
-            dHdr.innerHTML = '<div>' +
-                '<div class="district-name">' + dist.toUpperCase() + '</div>' +
-                '<div class="district-stats">Target: ' + dTarget + ' pupils | Distributed: ' + dDist + ' ITNs | ' + dRate + '%</div>' +
-                '</div><div class="district-toggle">▼</div>';
-            dWrap.appendChild(dHdr);
-
-            const cList = document.createElement('div');
-            cList.className = 'chiefdom-list';
-            chiefdoms.forEach(function(chf) {
-                const c = distData[chf];
-                const cRate = c.target > 0 ? Math.round((c.distributed / c.target) * 100) : 0;
-                
-                const cItem = document.createElement('div');
-                cItem.className = 'chiefdom-item';
-                cItem.innerHTML = '<div class="chiefdom-name">' + chf + '</div>' +
-                    '<div style="font-size:10px;color:#6b7280;margin-top:3px;">' +
-                    'Target: <strong>' + c.target + '</strong> pupils | ' +
-                    'Distributed: <strong>' + c.distributed + '</strong> ITNs</div>' +
-                    '<div class="chiefdom-progress">' +
-                    '<div class="progress-bar"><div class="progress-fill" style="width:' + Math.min(cRate, 100) + '%"></div></div>' +
-                    '<div class="progress-text"><span>' + cRate + '% achievement</span></div>' +
-                    '</div>';
-                cList.appendChild(cItem);
-            });
-            dWrap.appendChild(cList);
-            container.appendChild(dWrap);
-        });
-
-    } catch(e) {
-        console.error('Error loading data:', e);
-        document.getElementById('emptyState').style.display = 'block';
-    }
+// helper: safe number
+function toNumber(val) {
+  let n = parseFloat(val);
+  return isNaN(n) ? 0 : n;
 }
 
-loadData();
+// load CSV (cascading_data.csv) and submissions (Google Script)
+async function loadAllData() {
+  try {
+    // ---------- STEP 1: fetch & parse cascading_data.csv (targets for OLD schools) ----------
+    const csvResponse = await fetch('./cascading_data.csv');
+    if (!csvResponse.ok) throw new Error(`CSV fetch failed: ${csvResponse.status}`);
+    const csvText = await csvResponse.text();
+    
+    // build target tree from CSV: district -> chiefdom -> targetSum
+    const targetTree = {}; // { district: { chiefdom: targetSum } }
+    
+    Papa.parse(csvText, {
+      header: true,
+      skipEmptyLines: true,
+      step: function(result) {
+        const row = result.data;
+        if (!row) return;
+        // Extract columns (case-insensitive mapping)
+        const district = (row.District || row.district || '').toString().trim();
+        const chiefdom = (row.Chiefdom || row.chiefdom || '').toString().trim();
+        const schoolStatus = (row['School Status'] || row.school_status || row.status || '').toString().trim();
+        let enrollment = toNumber(row['School Enrollment'] || row.enrollment || row['Enrollment'] || 0);
+        
+        // Only count OLD schools (case-insensitive: "old", "Old", "OLD", "No" also treated as old according to spec)
+        const isOld = (schoolStatus.toLowerCase() === 'old' || schoolStatus === 'No');
+        if (!isOld) return;
+        if (!district || !chiefdom || enrollment === 0) return;
+        
+        if (!targetTree[district]) targetTree[district] = {};
+        if (!targetTree[district][chiefdom]) targetTree[district][chiefdom] = 0;
+        targetTree[district][chiefdom] += enrollment;
+      },
+      complete: function() {
+        console.log('[ITN] CSV parsed, targetTree built:', targetTree);
+      }
+    });
+    
+    // Wait a tiny moment to ensure Papa step fully processes (Papa is sync step by step, but to be safe we use a small delay? actually step runs sync, so after parse call, targetTree ready)
+    // but Papa.parse with step is synchronous in order, so after calling it we can use targetTree.
+    // However due to async nature, we must ensure we wait? Actually Papa.parse without worker is blocking. So targetTree is filled right after.
+    // But we need to be careful: we are inside async function, but it's fine.
+    
+    // give a microtask to ensure all steps executed? No, Papa.parse is sync when not using worker. So we can directly proceed.
+    
+    // ---------- STEP 2: fetch submissions (distributed ITNs) from Google Script ----------
+    let submissions = [];
+    try {
+      const subRes = await fetch(SCRIPT_URL + '?action=getData');
+      const subJson = await subRes.json();
+      submissions = subJson.data || [];
+    } catch (err) {
+      console.warn('Could not fetch submissions, using empty dataset', err);
+      submissions = [];
+    }
+    
+    // Build distributed tree: district -> chiefdom -> sum distributed
+    const distributedTree = {};
+    submissions.forEach(record => {
+      const district = (record.district || record.District || '').toString().trim();
+      const chiefdom = (record.chiefdom || record.Chiefdom || '').toString().trim();
+      let itns = toNumber(record.total_itn || record['Total ITNs'] || record.itns || 0);
+      if (!district || !chiefdom || itns === 0) return;
+      if (!distributedTree[district]) distributedTree[district] = {};
+      if (!distributedTree[district][chiefdom]) distributedTree[district][chiefdom] = 0;
+      distributedTree[district][chiefdom] += itns;
+    });
+    
+    // ---------- STEP 3: Merge target and distributed ----------
+    const allDistrictsSet = new Set([...Object.keys(targetTree), ...Object.keys(distributedTree)]);
+    mergedDistrictChiefdom = {};
+    
+    for (let dist of allDistrictsSet) {
+      if (!mergedDistrictChiefdom[dist]) mergedDistrictChiefdom[dist] = {};
+      const targetChiefs = targetTree[dist] || {};
+      const distChiefs = distributedTree[dist] || {};
+      const allChiefdoms = new Set([...Object.keys(targetChiefs), ...Object.keys(distChiefs)]);
+      
+      for (let chf of allChiefdoms) {
+        const targetVal = targetChiefs[chf] || 0;
+        const distributedVal = distChiefs[chf] || 0;
+        mergedDistrictChiefdom[dist][chf] = {
+          target: targetVal,
+          distributed: distributedVal
+        };
+      }
+    }
+    
+    // compute district totals
+    districtTotalsMap = {};
+    let grandTarget = 0, grandDistributed = 0;
+    for (let dist in mergedDistrictChiefdom) {
+      let dTarget = 0, dDist = 0;
+      for (let chf in mergedDistrictChiefdom[dist]) {
+        dTarget += mergedDistrictChiefdom[dist][chf].target;
+        dDist += mergedDistrictChiefdom[dist][chf].distributed;
+      }
+      districtTotalsMap[dist] = { target: dTarget, distributed: dDist };
+      grandTarget += dTarget;
+      grandDistributed += dDist;
+    }
+    
+    const overallRate = grandTarget > 0 ? Math.round((grandDistributed / grandTarget) * 100) : 0;
+    
+    // update KPI cards
+    document.getElementById('totalTargetVal').innerText = grandTarget.toLocaleString();
+    document.getElementById('totalDistributedVal').innerText = grandDistributed.toLocaleString();
+    document.getElementById('achievementRateVal').innerHTML = overallRate + '%';
+    
+    // if no data, show empty
+    if (Object.keys(mergedDistrictChiefdom).length === 0) {
+      document.getElementById('emptyMessage').style.display = 'block';
+      document.getElementById('districtSummaryBody').innerHTML = '<tr><td colspan="4" style="text-align:center;">No data available</td></tr>';
+      return;
+    } else {
+      document.getElementById('emptyMessage').style.display = 'none';
+    }
+    
+    // Render district summary table + dynamic chiefdom accordion panels
+    renderDistrictSummaryTable();
+    renderChiefdomAccordions();
+    
+  } catch (error) {
+    console.error('Fatal error loading data:', error);
+    document.getElementById('districtSummaryBody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#b91c1c;">Error loading data. Check console.</td></tr>';
+    document.getElementById('emptyMessage').style.display = 'block';
+  }
+}
+
+// render summary table (click on district name expands corresponding panel)
+function renderDistrictSummaryTable() {
+  const tbody = document.getElementById('districtSummaryBody');
+  if (!tbody) return;
+  const districtsSorted = Object.keys(districtTotalsMap).sort((a,b) => a.localeCompare(b));
+  if (districtsSorted.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No districts found</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = '';
+  for (let dist of districtsSorted) {
+    const totals = districtTotalsMap[dist];
+    const targetVal = totals.target;
+    const distVal = totals.distributed;
+    const rate = targetVal > 0 ? Math.round((distVal / targetVal) * 100) : 0;
+    const row = document.createElement('tr');
+    // district name cell with interactive click & icon
+    const nameCell = document.createElement('td');
+    nameCell.className = 'district-name-cell';
+    // unique accordion id reference
+    const accordionId = `accordion-${dist.replace(/\s/g, '-')}`;
+    nameCell.setAttribute('data-district', dist);
+    nameCell.setAttribute('data-target-accordion', accordionId);
+    nameCell.style.cursor = 'pointer';
+    nameCell.innerHTML = `<span class="district-expand-icon" id="icon-${accordionId}">▶</span> <strong>${dist.toUpperCase()}</strong>`;
+    nameCell.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleChiefdomPanel(dist, accordionId);
+    });
+    
+    const targetCell = document.createElement('td');
+    targetCell.className = 'numeric-cell';
+    targetCell.innerText = targetVal.toLocaleString();
+    
+    const distCell = document.createElement('td');
+    distCell.className = 'numeric-cell';
+    distCell.innerText = distVal.toLocaleString();
+    
+    const rateCell = document.createElement('td');
+    rateCell.className = 'rate-cell';
+    rateCell.innerText = rate + '%';
+    
+    row.appendChild(nameCell);
+    row.appendChild(targetCell);
+    row.appendChild(distCell);
+    row.appendChild(rateCell);
+    tbody.appendChild(row);
+  }
+}
+
+// toggle chiefdom detail panel (accordion style)
+function toggleChiefdomPanel(district, accordionId) {
+  const panel = document.getElementById(accordionId);
+  if (!panel) return;
+  const isCurrentlyOpen = panel.classList.contains('open');
+  // close all open panels first (optional: but UX keeps only one? we will just toggle clicked one, but we can also close others? Better close others for clean experience)
+  const allOpenPanels = document.querySelectorAll('.chiefdom-panel.open');
+  allOpenPanels.forEach(openPanel => {
+    if (openPanel.id !== accordionId) {
+      openPanel.classList.remove('open');
+      // also rotate icon for that district
+      const oldAccId = openPanel.id;
+      const oldIconSpan = document.querySelector(`#icon-${oldAccId}`);
+      if (oldIconSpan) oldIconSpan.innerHTML = '▶';
+    }
+  });
+  // toggle current
+  if (isCurrentlyOpen) {
+    panel.classList.remove('open');
+    const iconSpan = document.querySelector(`#icon-${accordionId}`);
+    if (iconSpan) iconSpan.innerHTML = '▶';
+  } else {
+    panel.classList.add('open');
+    const iconSpan = document.querySelector(`#icon-${accordionId}`);
+    if (iconSpan) iconSpan.innerHTML = '▼';
+    // ensure panel content is rendered (if not already)
+    ensurePanelContent(district, accordionId);
+  }
+}
+
+// ensure chiefdom content inside the panel (render once)
+function ensurePanelContent(district, panelId) {
+  const panelDiv = document.getElementById(panelId);
+  if (!panelDiv) return;
+  // if already has child elements with chiefdom data, skip re-render (but we can also update each time but fine)
+  if (panelDiv.getAttribute('data-populated') === 'true') return;
+  
+  const chiefdomsData = mergedDistrictChiefdom[district];
+  if (!chiefdomsData) {
+    panelDiv.innerHTML = '<div style="padding:16px;text-align:center;">No chiefdom data available</div>';
+    panelDiv.setAttribute('data-populated', 'true');
+    return;
+  }
+  
+  const chiefdomNames = Object.keys(chiefdomsData).sort();
+  if (chiefdomNames.length === 0) {
+    panelDiv.innerHTML = '<div style="padding:16px;text-align:center;">No chiefdom records</div>';
+    panelDiv.setAttribute('data-populated', 'true');
+    return;
+  }
+  
+  let html = `<div class="chiefdom-grid">`;
+  for (let chf of chiefdomNames) {
+    const item = chiefdomsData[chf];
+    const targetVal = item.target;
+    const distributedVal = item.distributed;
+    const rate = targetVal > 0 ? Math.min(100, Math.round((distributedVal / targetVal) * 100)) : 0;
+    html += `
+      <div class="chiefdom-card">
+        <div class="chiefdom-name">
+          <span>📍 ${chf}</span>
+          <span style="font-size:0.7rem; background:#eef3f0; padding:2px 10px; border-radius:20px;">${rate}%</span>
+        </div>
+        <div class="chiefdom-numbers">
+          <span>🎯 Target: ${targetVal.toLocaleString()} pupils</span>
+          <span>🦟 Distributed: ${distributedVal.toLocaleString()} ITNs</span>
+        </div>
+        <div class="progress-container">
+          <div class="progress-bar-bg">
+            <div class="progress-fill" style="width: ${rate}%;"></div>
+          </div>
+          <div class="progress-stats">
+            <span>Achievement ${rate}%</span>
+            <span>${distributedVal.toLocaleString()} / ${targetVal.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  html += `</div>`;
+  panelDiv.innerHTML = html;
+  panelDiv.setAttribute('data-populated', 'true');
+}
+
+// Render all district accordion containers (hidden panels initially)
+function renderChiefdomAccordions() {
+  const container = document.getElementById('districtDetailContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  const districtsSorted = Object.keys(districtTotalsMap).sort();
+  if (districtsSorted.length === 0) {
+    container.innerHTML = '<div class="empty-state">No chiefdom details to show</div>';
+    return;
+  }
+  
+  for (let dist of districtsSorted) {
+    const totals = districtTotalsMap[dist];
+    const targetVal = totals.target;
+    const distVal = totals.distributed;
+    const rate = targetVal > 0 ? Math.round((distVal / targetVal) * 100) : 0;
+    const accordionId = `accordion-${dist.replace(/\s/g, '-')}`;
+    const accordionDiv = document.createElement('div');
+    accordionDiv.className = 'chiefdom-accordion';
+    // header for visual consistency (optional but we keep hidden except for click via table, we keep collapsible panel)
+    // but we need the panel container
+    accordionDiv.innerHTML = `
+      <div class="chiefdom-panel" id="${accordionId}" style="display:none;"></div>
+    `;
+    // Override style: we want panel to be hidden until toggled, and class open toggles display block
+    const panelDiv = accordionDiv.querySelector('.chiefdom-panel');
+    panelDiv.style.display = 'none';
+    // we will use class .open to display block ( override)
+    // add custom style
+    const styleTag = document.createElement('style');
+    if (!document.querySelector('#dynamic-panel-style')) {
+      const s = document.createElement('style');
+      s.id = 'dynamic-panel-style';
+      s.textContent = `.chiefdom-panel { display: none; } .chiefdom-panel.open { display: block !important; }`;
+      document.head.appendChild(s);
+    }
+    panelDiv.classList.remove('open');
+    container.appendChild(accordionDiv);
+    // preload? not needed, will populate on toggle.
+  }
+  // also attach event listeners to all district name cells again? already added in table rendering.
+  // but we also need to make sure panel content generation works when toggled.
+  // add an extra sync: after panels created, attach to window?
+  console.log('Accordion containers created');
+}
+
+// initial load
+loadAllData();
 </script>
 </body>
 </html>
