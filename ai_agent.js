@@ -911,8 +911,6 @@
             tog.textContent = '▶';
         }
     }
-            return;
-        }
 
         // Show banner if sheet data not yet fetched
         const sheetBanner = _sheetRows.length === 0
