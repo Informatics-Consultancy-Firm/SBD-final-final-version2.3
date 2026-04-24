@@ -751,42 +751,157 @@
         );
     }
 
+    // SIMPLIFIED TARGETS TAB - Use existing buildTargetsTree()
+    // Target = schools from buildTargetsTree (School Status = "Old")
+    // Submitted = unique schools from submissions (count once per school)
+    // Achievement % = (Submitted / Target) × 100%
+
     function renderTargetsTab() {
         const body = document.getElementById('targetsBody');
         if (!body) return;
 
-        // ── TAB SWITCHER ──────────────────────────────────────────
-        const existing = document.getElementById('targetsTabSwitcher');
-        if (!existing) {
-            const sw = document.createElement('div');
-            sw.id = 'targetsTabSwitcher';
-            sw.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid #e4eaf2;padding-bottom:12px;flex-wrap:wrap;';
-            const tabs = [
-                { id: 'targeted',   label: '📍 Schools Targeted',      color: '#10b981', bg: '#ecfdf5' },
-                { id: 'captured',   label: '⭐ Schools Captured (New)', color: '#f59e0b', bg: '#fffbf0' },
-                { id: 'overall',    label: '📊 Overall Coverage',      color: '#6366f1', bg: '#eef2ff' }
-            ];
-            tabs.forEach(function(t) {
-                const btn = document.createElement('button');
-                btn.innerHTML = t.label;
-                btn.style.cssText = 'border:none;background:'+t.bg+';color:'+t.color+';padding:8px 16px;border-radius:8px;font-family:Oswald,sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:all .2s;';
-                btn.onclick = function() {
-                    document.querySelectorAll('#targetsTabSwitcher button').forEach(b => b.style.opacity = '0.5');
-                    btn.style.opacity = '1';
-                    renderTargetsContent(t.id);
-                };
-                sw.appendChild(btn);
+        try {
+            // Use existing function to build targets tree from cascading_data.csv
+            const tree = buildTargetsTree ? buildTargetsTree() : {};
+            
+            // Get submitted schools from submissions
+            const submissions = _sheetRows || [];
+            const submittedSchools = {};
+            
+            submissions.forEach(function(row) {
+                const dist = (row.district || row.District || '').trim().toLowerCase();
+                const chf = (row.chiefdom || row.Chiefdom || '').trim().toLowerCase();
+                const school = (row.school_name || row['School Name'] || '').trim().toLowerCase().replace(/_2026$/i, '');
+                
+                if (!dist || !chf || !school) return;
+                const key = dist + '|' + chf + '|' + school;
+                submittedSchools[key] = 1;
             });
-            body.insertBefore(sw, body.firstChild);
-            tabs[0].btn = sw.children[0]; // mark first as active
-            sw.children[0].style.opacity = '1';
-        }
 
-        renderTargetsContent('targeted');
+            // Build target set from tree (Old schools only)
+            const csvSchools = {};
+            for (const d in tree) {
+                for (const c in tree[d]) {
+                    const schools = tree[d][c].schools || [];
+                    schools.forEach(function(sch) {
+                        const key = d.toLowerCase() + '|' + c.toLowerCase() + '|' + (sch.name || '').toLowerCase();
+                        csvSchools[key] = 1;
+                    });
+                }
+            }
+
+            const targetCount = Object.keys(csvSchools).length;
+            const submittedCount = Object.keys(submittedSchools).length;
+            const achievement = targetCount > 0 ? Math.round((submittedCount / targetCount) * 100) : 0;
+
+            // Build district/chiefdom summary
+            const districtData = {};
+            
+            Object.keys(csvSchools).forEach(function(key) {
+                const parts = key.split('|');
+                const dist = parts[0], chf = parts[1];
+                if (!districtData[dist]) districtData[dist] = {};
+                if (!districtData[dist][chf]) districtData[dist][chf] = { target: 0, submitted: 0 };
+                districtData[dist][chf].target++;
+            });
+
+            Object.keys(submittedSchools).forEach(function(key) {
+                const parts = key.split('|');
+                const dist = parts[0], chf = parts[1];
+                if (!districtData[dist]) districtData[dist] = {};
+                if (!districtData[dist][chf]) districtData[dist][chf] = { target: 0, submitted: 0 };
+                districtData[dist][chf].submitted++;
+            });
+
+            // Render HTML
+            let html = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">' +
+                '<div style="background:#f0fdf4;border-radius:10px;padding:14px;text-align:center;border-left:3px solid #10b981;">' +
+                '<div style="font-size:24px;font-weight:700;color:#10b981;">' + targetCount + '</div>' +
+                '<div style="font-size:10px;color:#6b7280;letter-spacing:.5px;margin-top:4px;text-transform:uppercase;">Target Schools (Old)</div>' +
+                '</div>' +
+                '<div style="background:#ecfdf5;border-radius:10px;padding:14px;text-align:center;border-left:3px solid #06b6d4;">' +
+                '<div style="font-size:24px;font-weight:700;color:#06b6d4;">' + submittedCount + '</div>' +
+                '<div style="font-size:10px;color:#6b7280;letter-spacing:.5px;margin-top:4px;text-transform:uppercase;">Schools Submitted</div>' +
+                '</div>' +
+                '<div style="background:#fffbf0;border-radius:10px;padding:14px;text-align:center;border-left:3px solid #f59e0b;">' +
+                '<div style="font-size:24px;font-weight:700;color:#f59e0b;">' + achievement + '%</div>' +
+                '<div style="font-size:10px;color:#6b7280;letter-spacing:.5px;margin-top:4px;text-transform:uppercase;">Achievement</div>' +
+                '</div></div>';
+
+            // District table
+            html += '<div style="background:#fff;border-radius:10px;overflow:hidden;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">' +
+                '<table style="width:100%;border-collapse:collapse;">' +
+                '<thead><tr style="background:linear-gradient(135deg,#f0fdf4,#e0f8f4);border-bottom:1px solid #d1fae5;">' +
+                '<th style="padding:11px 12px;text-align:left;font-size:11px;font-weight:700;color:#047857;letter-spacing:.4px;text-transform:uppercase;">District</th>' +
+                '<th style="padding:11px 12px;text-align:right;font-size:11px;font-weight:700;color:#047857;letter-spacing:.4px;text-transform:uppercase;">Target</th>' +
+                '<th style="padding:11px 12px;text-align:right;font-size:11px;font-weight:700;color:#047857;letter-spacing:.4px;text-transform:uppercase;">Submitted</th>' +
+                '<th style="padding:11px 12px;text-align:right;font-size:11px;font-weight:700;color:#047857;letter-spacing:.4px;text-transform:uppercase;">Achievement %</th>' +
+                '</tr></thead><tbody>';
+
+            Object.keys(districtData).sort().forEach(function(dist) {
+                let dTarget = 0, dSubmitted = 0;
+                Object.keys(districtData[dist]).forEach(function(chf) {
+                    dTarget += districtData[dist][chf].target;
+                    dSubmitted += districtData[dist][chf].submitted;
+                });
+                const dRate = dTarget > 0 ? Math.round((dSubmitted / dTarget) * 100) : 0;
+                
+                html += '<tr style="border-bottom:1px solid #f0f4f8;"><td style="padding:11px 12px;font-size:11px;font-weight:700;color:#0d9488;">' + 
+                    dist.toUpperCase() + '</td>' +
+                    '<td style="padding:11px 12px;text-align:right;font-size:11px;color:#6b7280;">' + dTarget + '</td>' +
+                    '<td style="padding:11px 12px;text-align:right;font-size:11px;color:#6b7280;">' + dSubmitted + '</td>' +
+                    '<td style="padding:11px 12px;text-align:right;font-size:11px;font-weight:600;color:#f59e0b;">' + dRate + '%</td></tr>';
+            });
+
+            html += '</tbody></table></div>';
+
+            // Chiefdom breakdown
+            html += '<div style="font-size:12px;font-weight:700;color:#047857;letter-spacing:.5px;margin:16px 0 12px 0;text-transform:uppercase;border-bottom:2px solid #d1fae5;padding-bottom:8px;">🔍 Detail by Chiefdom</div>';
+
+            Object.keys(districtData).sort().forEach(function(dist) {
+                const chiefdoms = Object.keys(districtData[dist]).sort();
+                let dTarget = 0, dSubmitted = 0;
+                chiefdoms.forEach(c => {
+                    dTarget += districtData[dist][c].target;
+                    dSubmitted += districtData[dist][c].submitted;
+                });
+                const dRate = dTarget > 0 ? Math.round((dSubmitted / dTarget) * 100) : 0;
+
+                html += '<div style="background:#fff;border-radius:12px;margin-bottom:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);">' +
+                    '<div style="padding:12px 16px;background:linear-gradient(135deg,#ecfdf5,#f0fdf4);cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;" onclick="toggleDistrictTargets(this)">' +
+                    '<div><div style="font-size:12px;font-weight:700;color:#047857;letter-spacing:.5px;">' + dist.toUpperCase() + '</div>' +
+                    '<div style="font-size:10px;color:#6b7280;margin-top:2px;">Target: ' + dTarget + ' | Submitted: ' + dSubmitted + ' | ' + dRate + '%</div></div>' +
+                    '<span data-tog style="font-size:16px;">▼</span></div>' +
+                    '<div style="padding:10px 12px;">';
+
+                chiefdoms.forEach(function(chf) {
+                    const c = districtData[dist][chf];
+                    const cRate = c.target > 0 ? Math.round((c.submitted / c.target) * 100) : 0;
+                    const pbWidth = Math.min(cRate, 100);
+                    
+                    html += '<div style="background:#f9fafb;border-radius:8px;padding:10px;margin-bottom:8px;border-left:3px solid #06b6d4;">' +
+                        '<div style="font-size:11px;font-weight:700;color:#0d9488;letter-spacing:.3px;">' + chf + '</div>' +
+                        '<div style="font-size:10px;color:#6b7280;margin-top:2px;">Target: <strong>' + c.target + '</strong> schools | Submitted: <strong>' + c.submitted + '</strong></div>' +
+                        '<div style="margin-top:5px;"><div style="height:6px;background:#dbeafe;border-radius:3px;overflow:hidden;">' +
+                        '<div style="height:100%;background:linear-gradient(90deg,#06b6d4,#14b8a6);width:' + pbWidth + '%;border-radius:3px;"></div>' +
+                        '</div><div style="font-size:9px;color:#6b7280;margin-top:2px;">' + cRate + '% achievement</div></div>' +
+                        '</div>';
+                });
+
+                html += '</div></div>';
+            });
+
+            body.innerHTML = html;
+
+        } catch(e) {
+            console.error('Targets Tab Error:', e);
+            body.innerHTML = '<div style="padding:20px;color:#dc3545;font-size:13px;"><strong>Error:</strong> ' + e.message + '<br><br>Check browser console (F12) for details.</div>';
+        }
     }
 
-    function toggleDistrict(el) {
-        const list = el.nextElementSibling;
+    // Toggle district accordion
+    function toggleDistrictTargets(el) {
+        const list = el.parentElement.nextElementSibling;
         const tog = el.querySelector('[data-tog]');
         if (list.style.display === 'none') {
             list.style.display = 'block';
@@ -796,138 +911,6 @@
             tog.textContent = '▶';
         }
     }
-
-    function renderTargetsByType(tree, submitted, category, title) {
-        const districts = Object.keys(tree).sort();
-        let totalSchools = 0, totalSubmitted = 0;
-
-        if (!districts.length) {
-            return '<div style="padding:40px 20px;text-align:center;color:#94a3b8;">No data available</div>';
-        }
-
-        // Count schools in category
-        for (const d in tree) {
-            for (const c in tree[d]) {
-                const schools = tree[d][c].schools || [];
-                schools.forEach(function(sch) {
-                    totalSchools++;
-                    const key = d.toLowerCase()+'|'+c.toLowerCase()+'|'+(sch.phu||'').toLowerCase()+'|'+(sch.com||'').toLowerCase()+'|'+(sch.name||'').toLowerCase();
-                    if (category.has(key)) totalSubmitted++;
-                });
-            }
-        }
-
-        const rate = totalSchools > 0 ? Math.round((totalSubmitted / totalSchools) * 100) : 0;
-
-        let html = '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);">' +
-            '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">' +
-            '<div style="text-align:center;padding:12px;background:#f0fdf4;border-radius:8px;border-left:3px solid #10b981;">' +
-            '<div style="font-size:22px;font-weight:700;color:#10b981;">' + totalSchools + '</div>' +
-            '<div style="font-size:10px;color:#6b7280;letter-spacing:.4px;margin-top:4px;">TARGETED</div>' +
-            '</div>' +
-            '<div style="text-align:center;padding:12px;background:#ecfdf5;border-radius:8px;border-left:3px solid #06b6d4;">' +
-            '<div style="font-size:22px;font-weight:700;color:#06b6d4;">' + totalSubmitted + '</div>' +
-            '<div style="font-size:10px;color:#6b7280;letter-spacing:.4px;margin-top:4px;">ACHIEVED</div>' +
-            '</div>' +
-            '<div style="text-align:center;padding:12px;background:#fffbf0;border-radius:8px;border-left:3px solid #f59e0b;">' +
-            '<div style="font-size:22px;font-weight:700;color:#f59e0b;">' + rate + '%</div>' +
-            '<div style="font-size:10px;color:#6b7280;letter-spacing:.4px;margin-top:4px;">COVERAGE</div>' +
-            '</div></div>';
-
-        districts.forEach(function(d) {
-            const chiefdoms = Object.keys(tree[d]).sort();
-            let dTotal = 0, dSubmitted = 0;
-            
-            chiefdoms.forEach(function(c) {
-                const schools = tree[d][c].schools || [];
-                schools.forEach(function(sch) {
-                    dTotal++;
-                    const key = d.toLowerCase()+'|'+c.toLowerCase()+'|'+(sch.phu||'').toLowerCase()+'|'+(sch.com||'').toLowerCase()+'|'+(sch.name||'').toLowerCase();
-                    if (category.has(key)) dSubmitted++;
-                });
-            });
-
-            const dRate = dTotal > 0 ? Math.round((dSubmitted / dTotal) * 100) : 0;
-
-            html += '<div style="border-radius:10px;overflow:hidden;margin-bottom:10px;background:#f9fafb;border:1px solid #e5e7eb;">' +
-                '<div style="padding:12px;background:linear-gradient(135deg,#f0fdf4,#e0f8f4);cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;" onclick="toggleDistrict(this)">' +
-                '<div><div style="font-size:12px;font-weight:700;color:#047857;letter-spacing:.5px;">' + d.toUpperCase() + '</div>' +
-                '<div style="font-size:9px;color:#6b7280;margin-top:3px;">' + dSubmitted + '/' + dTotal + ' | ' + dRate + '%</div></div>' +
-                '<span data-tog style="font-size:14px;">▼</span></div>' +
-                '<div style="padding:10px;">';
-
-            chiefdoms.forEach(function(c) {
-                let cTotal = 0, cSubmitted = 0;
-                const schools = tree[d][c].schools || [];
-                schools.forEach(function(sch) {
-                    cTotal++;
-                    const key = d.toLowerCase()+'|'+c.toLowerCase()+'|'+(sch.phu||'').toLowerCase()+'|'+(sch.com||'').toLowerCase()+'|'+(sch.name||'').toLowerCase();
-                    if (category.has(key)) cSubmitted++;
-                });
-
-                const cRate = cTotal > 0 ? Math.round((cSubmitted / cTotal) * 100) : 0;
-                html += '<div style="background:#fff;border-radius:8px;padding:10px;margin-bottom:6px;border-left:3px solid #06b6d4;font-size:11px;font-weight:600;color:#0d9488;">' + c +
-                    '<div style="font-size:9px;color:#6b7280;margin-top:4px;font-weight:400;">' + cSubmitted + '/' + cTotal + ' schools | ' + cRate + '%</div></div>';
-            });
-
-            html += '</div></div>';
-        });
-
-        return html + '</div>';
-    }
-
-            function renderTargetsContent(tabType) {
-        const body = document.getElementById('targetsBody');
-        const contentId = 'targetsContent-' + tabType;
-        let contentDiv = document.getElementById(contentId);
-        if (!contentDiv) {
-            contentDiv = document.createElement('div');
-            contentDiv.id = contentId;
-            // Remove old content divs
-            Array.from(body.querySelectorAll('[id^="targetsContent-"]')).forEach(d => d.remove());
-            body.appendChild(contentDiv);
-        }
-
-        const tree      = buildTargetsTree();
-        const submitted = getSubmittedSet();
-        const districts = Object.keys(tree).sort();
-        const allRows   = mergeData(_sheetRows || []);
-
-        // Segregate by New School status
-        const targetedSchools = new Set();
-        const capturedSchools = new Set();
-        allRows.forEach(function(r) {
-            const isNew = (r['New School'] || r.new_school || 'No').toString().trim().toLowerCase() === 'yes';
-            const _d  = (r.district  ||r['District']||'').trim().toLowerCase();
-            const _c  = (r.chiefdom  ||r['Chiefdom']||'').trim().toLowerCase();
-            const _f  = (r.facility  ||r['Health Facility (PHU)']||'').trim().toLowerCase();
-            const _co = (r.community ||r['Community / Village']||'').trim().toLowerCase();
-            const _sc = (r.school_name||r['School Name']||'').trim().toLowerCase().replace(/_2026$/i,'');
-            const key = _d+'|'+_c+'|'+_f+'|'+_co+'|'+_sc;
-            if (isNew) capturedSchools.add(key); else targetedSchools.add(key);
-        });
-
-        let html = '';
-
-        if (tabType === 'targeted') {
-            html = renderTargetsByType(tree, submitted, targetedSchools, 'Targeted Schools');
-        } else if (tabType === 'captured') {
-            html = renderTargetsByType(tree, submitted, capturedSchools, 'New Schools Captured');
-        } else {
-            html = renderTargetsByType(tree, submitted, new Set([...targetedSchools, ...capturedSchools]), 'All Schools');
-        }
-
-        contentDiv.innerHTML = html;
-    }
-
-    function renderTargetsByType(tree, submitted, category, title) {
-        const districts = Object.keys(tree).sort();
-
-        if (!districts.length) {
-            body.innerHTML = `<div class="an-no-data">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-              <div>No location data loaded. Ensure cascading_data.csv is present.</div>
-            </div>`;
             return;
         }
 
