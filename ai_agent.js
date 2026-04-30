@@ -227,10 +227,9 @@
     const SAMPLES = [
         'How many schools have been submitted?','What is the overall ITN coverage rate?',
         'Which district has the most submissions?','Show coverage breakdown by gender',
-        'How many ITNs were distributed in total?','List schools with coverage below 80%',
-        'What is average enrollment per school?','How many schools are still pending?',
+        'What is the average enrollment per school?','How many schools are still pending?',
         'Compare boys vs girls ITN coverage','Which schools received IG2 nets?',
-        'How many ITNs remain after distribution?','Give me a summary by chiefdom',
+        'Give me a summary by chiefdom',
         'Which class has the highest coverage?','Who submitted the most records?',
     ];
     function pickN(n){const p=[...SAMPLES],o=[];while(o.length<n&&p.length){const i=Math.floor(Math.random()*p.length);o.push(p.splice(i,1)[0]);}return o;}
@@ -316,6 +315,9 @@
     function buildTargetsFromCSV() {
         const data = window.ALL_LOCATION_DATA || {};
         const targets = {};
+        // Also store detailed school info for target tab (to show School Status)
+        window._TARGETS_DETAIL = [];
+        
         for (const district in data) {
             const dk = district.trim().toLowerCase();
             const dSet = new Set();
@@ -331,8 +333,17 @@
                         if (!Array.isArray(schools)) continue;
                         schools.forEach(sc => {
                             if (!sc) return;
-                            const fullKey = dk+'|'+ck+'|'+pk+'|'+comk+'|'+sc.trim().toLowerCase();
+                            // Check if school has status field (from CSV)
+                            const schoolStatus = sc.status || sc.School_Status || 'Old';
+                            const fullKey = dk+'|'+ck+'|'+pk+'|'+comk+'|'+sc.name.trim().toLowerCase();
                             pSet.add(fullKey); cSet.add(fullKey); dSet.add(fullKey);
+                            // Store for target tab
+                            window._TARGETS_DETAIL.push({
+                                key: fullKey,
+                                district, chiefdom, phu, community,
+                                name: sc.name,
+                                status: schoolStatus
+                            });
                         });
                     }
                     if (pSet.size > 0) targets[dk+'|'+ck+'|'+pk] = pSet.size;
@@ -484,32 +495,46 @@
 
         // Targets come from CSV (already computed). Look up the right level
         // based on active filters: district-only → dKey, +chiefdom → cKey, +phu → pKey
+        // MODIFIED: Only count schools with status 'Old' for denominator
         const targets    = window._TARGETS || {};
         const hasTargets = Object.keys(targets).length > 0;
         const fD = (document.getElementById('af_district')?.value||'').trim().toLowerCase();
         const fC = (document.getElementById('af_chiefdom')?.value||'').trim().toLowerCase();
         const fP = (document.getElementById('af_facility')?.value||'').trim().toLowerCase();
+        
+        // Function to get target count excluding 'New' schools
+        function getTargetCountExcludingNew(district, chiefdom, phu) {
+            if (!window._TARGETS_DETAIL) return 0;
+            let count = 0;
+            window._TARGETS_DETAIL.forEach(school => {
+                const dMatch = !district || school.district.toLowerCase() === district;
+                const cMatch = !chiefdom || school.chiefdom.toLowerCase() === chiefdom;
+                const pMatch = !phu || (school.phu && school.phu.toLowerCase() === phu);
+                if (dMatch && cMatch && pMatch && school.status !== 'New') {
+                    count++;
+                }
+            });
+            return count;
+        }
+        
         let targetCount = 0;
-        if (hasTargets) {
+        if (hasTargets && window._TARGETS_DETAIL) {
             if (fP && fC && fD) {
-                // PHU level
-                targetCount = targets[fD+'|'+fC+'|'+fP] || 0;
+                targetCount = getTargetCountExcludingNew(fD, fC, fP);
             } else if (fC && fD) {
-                // Chiefdom level
-                targetCount = targets[fD+'|'+fC] || 0;
+                targetCount = getTargetCountExcludingNew(fD, fC);
             } else if (fD) {
-                // District level
-                targetCount = targets[fD] || 0;
+                targetCount = getTargetCountExcludingNew(fD);
             } else {
-                // National total — sum all district-level entries (single-segment keys)
-                Object.entries(targets).forEach(([k, v]) => {
-                    if (!k.includes('|')) targetCount += v;
+                // National total — sum all 'Old' schools
+                window._TARGETS_DETAIL.forEach(school => {
+                    if (school.status !== 'New') targetCount++;
                 });
             }
         }
 
-        // Aggregate
-        let tp=0,ti=0,tb=0,tg=0,tbi=0,tgi=0,tr=0,trem=0;
+        // Aggregate - REMOVED itns_received and itns_remaining calculations
+        let tp=0,ti=0,tb=0,tg=0,tbi=0,tgi=0;
         const byDist={};
         const cls={b:[0,0,0,0,0],g:[0,0,0,0,0],bi:[0,0,0,0,0],gi:[0,0,0,0,0]};
 
@@ -521,9 +546,7 @@
             const vg =n(r,'total_girls');
             const vbi=n(r,'total_boys_itn');
             const vgi=n(r,'total_girls_itn');
-            const vr =n(r,'itns_received');
-            const vrem=n(r,'itns_remaining')||n(r,'itns_remaining_val');
-            tp+=vp;ti+=vi;tb+=vb;tg+=vg;tbi+=vbi;tgi+=vgi;tr+=vr;trem+=vrem;
+            tp+=vp;ti+=vi;tb+=vb;tg+=vg;tbi+=vbi;tgi+=vgi;
             const d=(r['district']||r['District']||'Unknown');
             if(!byDist[d])byDist[d]={n:0,p:0,i:0,b:0,g:0,bi:0,gi:0};
             byDist[d].n++;byDist[d].p+=vp;byDist[d].i+=vi;byDist[d].b+=vb;byDist[d].g+=vg;byDist[d].bi+=vbi;byDist[d].gi+=vgi;
@@ -552,18 +575,16 @@
         const distBoysCov=distL.map(d=>byDist[d].b>0?Math.round((byDist[d].bi/byDist[d].b)*100):0);
         const distGirlsCov=distL.map(d=>byDist[d].g>0?Math.round((byDist[d].gi/byDist[d].g)*100):0);
 
-        // ── Build HTML ──────────────────────────────────
+        // ── Build HTML (REMOVED ITNs Received and Remaining cards) ──────────────────
         body.innerHTML=`
         <!-- KPIs -->
         <div class="an-kpi-row">
-          ${hasTargets && targetCount>0 ? `<div class="an-kpi b"><div class="an-kpi-val">${targetCount}</div><div class="an-kpi-lbl">Target Schools</div></div>` : ''}
+          ${hasTargets && targetCount>0 ? `<div class="an-kpi b"><div class="an-kpi-val">${targetCount}</div><div class="an-kpi-lbl">Target Schools (Old)</div></div>` : ''}
           <div class="an-kpi b"><div class="an-kpi-val">${total}</div><div class="an-kpi-lbl">Submitted</div></div>
           ${hasTargets && targetCount>0 ? `<div class="an-kpi ${targetCount>total?'r':'g'}"><div class="an-kpi-val">${Math.max(0,targetCount-total)}</div><div class="an-kpi-lbl">Remaining</div></div>
           <div class="an-kpi ${Math.round((total/targetCount)*100)>=80?'g':'o'}"><div class="an-kpi-val">${Math.round((total/targetCount)*100)}%</div><div class="an-kpi-lbl">Progress</div></div>` : ''}
           <div class="an-kpi"><div class="an-kpi-val">${tp.toLocaleString()}</div><div class="an-kpi-lbl">Total Pupils</div></div>
-          <div class="an-kpi o"><div class="an-kpi-val">${tr.toLocaleString()}</div><div class="an-kpi-lbl">ITNs Received</div></div>
-          <div class="an-kpi g"><div class="an-kpi-val">${ti.toLocaleString()}</div><div class="an-kpi-lbl">Distributed</div></div>
-          <div class="an-kpi ${trem<0?'r':''}"><div class="an-kpi-val">${trem.toLocaleString()}</div><div class="an-kpi-lbl">Remaining</div></div>
+          <div class="an-kpi g"><div class="an-kpi-val">${ti.toLocaleString()}</div><div class="an-kpi-lbl">ITNs Distributed</div></div>
           <div class="an-kpi ${ov>=80?'g':ov>=50?'o':'r'}"><div class="an-kpi-val">${ov}%</div><div class="an-kpi-lbl">Coverage</div></div>
           <div class="an-kpi b"><div class="an-kpi-val">${bc}%</div><div class="an-kpi-lbl">Boys Cov.</div></div>
           <div class="an-kpi p"><div class="an-kpi-val">${gc}%</div><div class="an-kpi-lbl">Girls Cov.</div></div>
@@ -605,19 +626,16 @@
           </div>
         </div>`:''}
 
-        <!-- BY DISTRIBUTOR section removed -->
-
-        <!-- School table -->
+        <!-- School table (REMOVED Remaining column) -->
         <div class="an-section">
           <div class="an-section-hdr"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 3h18v18H3zM3 9h18M9 21V9"/></svg>ALL SCHOOLS (${total})</div>
           <div class="an-section-body" style="padding:0;">
             <div class="an-tbl-wrap">
               <table class="an-tbl">
-                <thead><tr><th>#</th><th>School</th><th>Community</th><th>District</th><th>Pupils</th><th>Boys</th><th>Girls</th><th>ITNs</th><th>Remaining</th><th>Coverage</th><th>Date</th><th>By</th></tr></thead>
+                <thead><tr><th>#</th><th>School</th><th>Community</th><th>District</th><th>Pupils</th><th>Boys</th><th>Girls</th><th>ITNs</th><th>Coverage</th><th>Date</th><th>By</th></tr></thead>
                 <tbody>
                   ${all.sort((a,b)=>(a.district||'').localeCompare(b.district||'')).map((r,i)=>{
                     const vp=n(r,'total_pupils'),vi=n(r,'total_itn'),vb=n(r,'total_boys'),vg=n(r,'total_girls');
-                    const vrem=n(r,'itns_remaining')||n(r,'itns_remaining_val');
                     const cov=vp>0?Math.round((vi/vp)*100):0;
                     const col=covColor(cov);
                     return`<tr>
@@ -629,7 +647,6 @@
                       <td style="text-align:center;color:#004080;">${vb}</td>
                       <td style="text-align:center;color:#e91e8c;">${vg}</td>
                       <td style="text-align:center;font-weight:600;">${vi}</td>
-                      <td style="text-align:center;color:${vrem<0?'#dc3545':'#607080'};">${vrem}</td>
                       <td>
                         <div class="an-cov-cell">
                           <div class="an-cov-bar"><div class="an-cov-fill" style="width:${Math.min(100,cov)}%;background:${col};"></div></div>
@@ -646,7 +663,7 @@
           </div>
         </div>`;
 
-        // ── Charts ──────────────────────────────────────
+        // ── Charts (unchanged) ──────────────────────────────────────
         // 1. Coverage donut
         mkChart('anCovDonut',{type:'doughnut',data:{labels:['Covered','Remaining'],datasets:[{data:[ov,100-ov],backgroundColor:[covColor(ov),'#e8edf2'],borderWidth:3,borderColor:'#fff'}]},options:{...chartOpts(),cutout:'72%',plugins:{legend:{position:'bottom',labels:{font:{family:"'Oswald',sans-serif",size:11},boxWidth:12}},title:{display:true,text:ov+'%',color:covColor(ov),font:{family:"'Oswald',sans-serif",size:22,weight:'700'}}}}});
 
@@ -672,8 +689,6 @@
             // 8. Boys vs Girls by district
             mkChart('anDistGender',{type:'bar',data:{labels:distL,datasets:[{label:'Boys',data:distBoysCov,backgroundColor:'rgba(0,64,128,.75)',borderColor:'#004080',borderWidth:2,borderRadius:4},{label:'Girls',data:distGirlsCov,backgroundColor:'rgba(233,30,140,.7)',borderColor:'#e91e8c',borderWidth:2,borderRadius:4}]},options:{...chartOpts({indexAxis:'y',scales:{x:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',font:CF.font},grid:{color:'rgba(0,0,0,.05)'}},y:{ticks:{font:CF.font},grid:{display:false}}}})}});
         }
-
-        // By distributor chart removed
     };
 
     // ════════════════════════════════════════════════════════
@@ -716,13 +731,17 @@
                     const pk = phu.trim().toLowerCase();
                     for (const community in data[district][chiefdom][phu]) {
                         const comk = community.trim().toLowerCase();
-                        const schoolList = data[district][chiefdom][phu][community];
+                        let schoolList = data[district][chiefdom][phu][community];
                         if (!Array.isArray(schoolList)) continue;
+                        // If schoolList contains objects with name and status, handle that
                         schoolList.forEach(s => {
                             if (!s) return;
+                            const schoolName = typeof s === 'object' ? s.name : s;
+                            const schoolStatus = typeof s === 'object' ? (s.status || s.School_Status || 'Old') : 'Old';
                             tree[district].chiefdoms[chiefdom].schools.push({
-                                district, chiefdom, phu, community, name: s,
-                                key: dk+'|'+ck+'|'+pk+'|'+comk+'|'+s.trim().toLowerCase()
+                                district, chiefdom, phu, community, name: schoolName,
+                                status: schoolStatus,
+                                key: dk+'|'+ck+'|'+pk+'|'+comk+'|'+schoolName.trim().toLowerCase()
                             });
                         });
                     }
@@ -775,11 +794,15 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2" width="16" height="16"><path d="M9 11l3 3L22 4"/></svg>
                 Showing <strong>${_sheetRows.length} submissions</strong> from ICF-SL Server.
               </div>`;
+        
+        // Calculate totals: ONLY Old schools count toward denominator
         let natSchools = 0, natDone = 0;
         districts.forEach(d => {
             Object.values(tree[d].chiefdoms).forEach(c => {
-                natSchools += c.schools.length;
-                natDone    += c.schools.filter(s => submitted.has(s.key)).length;
+                // Only count schools with status 'Old' for denominator
+                const oldSchools = c.schools.filter(s => s.status !== 'New');
+                natSchools += oldSchools.length;
+                natDone += oldSchools.filter(s => submitted.has(s.key)).length;
             });
         });
         const natPct = natSchools > 0 ? Math.round((natDone / natSchools) * 100) : 0;
@@ -801,7 +824,7 @@
                     <th style="padding:6px 10px;text-align:left;font-family:'Oswald',sans-serif;color:#c0392b;font-weight:600;">PHU</th>
                     <th style="padding:6px 10px;text-align:left;font-family:'Oswald',sans-serif;color:#c0392b;font-weight:600;">COMMUNITY</th>
                     <th style="padding:6px 10px;text-align:left;font-family:'Oswald',sans-serif;color:#c0392b;font-weight:600;">SCHOOL</th>
-                  </tr></thead>
+                   </tr></thead>
                   <tbody>${dups.map((r,i)=>`<tr style="background:${i%2?'#fff':'#fff5f5'};">
                     <td style="padding:5px 10px;color:#8090a0;">${r.row}</td>
                     <td style="padding:5px 10px;">${r.district}</td>
@@ -809,7 +832,7 @@
                     <td style="padding:5px 10px;">${r.phu}</td>
                     <td style="padding:5px 10px;">${r.community}</td>
                     <td style="padding:5px 10px;font-weight:600;color:#c0392b;">${r.school}</td>
-                  </tr>`).join('')}</tbody>
+                   </tr>`).join('')}</tbody>
                 </table>
               </div>
               <div style="padding:8px 14px;font-size:10px;color:#607080;border-top:1px solid #fde8e8;">Fix these duplicates in cascading_data.csv to ensure accurate target counts.</div>
@@ -857,18 +880,20 @@
         .tg-prog-bar{background:#e4eaf2;border-radius:4px;height:8px;flex:1;overflow:hidden;min-width:60px;}
         .tg-prog-fill{height:100%;border-radius:4px;}
         .tg-school-chips{display:flex;flex-wrap:wrap;gap:3px;max-width:340px;}
-    .tg-chip.new-school{background:#fff3cd;border:1px solid #ffc107;color:#856404;font-style:italic;}
-    .tg-chip.new-school::before{content:'★ ';}
+        .tg-chip.new-school{background:#fff3cd;border:1px solid #ffc107;color:#856404;font-style:italic;}
+        .tg-chip.new-school::before{content:'★ ';}
         .tg-chip{display:inline-block;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:600;white-space:nowrap;}
         .tg-chip.done{background:#e8f5e9;color:#28a745;border:1px solid #b2dfcc;}
         .tg-chip.pend{background:#fff8e1;color:#b8860b;border:1px solid #ffe082;}
+        /* Blue style for New schools (show but don't count) */
+        .tg-chip.new-added{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;font-style:italic;}
         .tg-expand-btn{background:none;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:10px;color:#004080;letter-spacing:.4px;text-decoration:underline;padding:0;white-space:nowrap;}
         </style>
 
         <div class="tg-kpi-row">
           <div class="tg-kpi b"><div class="tg-kv">${districts.length}</div><div class="tg-kl">Districts</div></div>
           <div class="tg-kpi"><div class="tg-kv">${districts.reduce((s,d)=>s+Object.keys(tree[d].chiefdoms).length,0)}</div><div class="tg-kl">Chiefdoms</div></div>
-          <div class="tg-kpi b"><div class="tg-kv">${natSchools.toLocaleString()}</div><div class="tg-kl">Target Schools</div></div>
+          <div class="tg-kpi b"><div class="tg-kv">${natSchools.toLocaleString()}</div><div class="tg-kl">Target Schools (Old)</div></div>
           <div class="tg-kpi g"><div class="tg-kv g">${natDone.toLocaleString()}</div><div class="tg-kl">Submitted</div></div>
           <div class="tg-kpi r"><div class="tg-kv r">${(natSchools-natDone).toLocaleString()}</div><div class="tg-kl">Remaining</div></div>
           <div class="tg-kpi ${natPct>=80?'g':natPct>=50?'o':'r'}"><div class="tg-kv">${natPct}%</div><div class="tg-kl">Progress</div></div>
@@ -876,7 +901,7 @@
 
         <div style="margin-bottom:20px;">
           <div style="display:flex;justify-content:space-between;font-family:'Oswald',sans-serif;font-size:11px;color:#607080;margin-bottom:5px;">
-            <span>NATIONAL PROGRESS</span><span style="font-weight:700;color:${natPct>=80?'#28a745':natPct>=50?'#b8860b':'#dc3545'}">${natDone} / ${natSchools} schools (${natPct}%)</span>
+            <span>NATIONAL PROGRESS (Old Schools Only)</span><span style="font-weight:700;color:${natPct>=80?'#28a745':natPct>=50?'#b8860b':'#dc3545'}">${natDone} / ${natSchools} schools (${natPct}%)</span>
           </div>
           <div class="tg-nat-bar"><div class="tg-nat-fill" style="width:${natPct}%;background:${natPct>=80?'#28a745':natPct>=50?'#f0a500':'#dc3545'};"></div></div>
         </div>`;
@@ -885,9 +910,10 @@
             const chiefdoms = Object.keys(tree[district].chiefdoms).sort();
             let dTotal = 0, dDone = 0;
             chiefdoms.forEach(c => {
-                const schs = tree[district].chiefdoms[c].schools;
-                dTotal += schs.length;
-                dDone  += schs.filter(s => submitted.has(s.key)).length;
+                // Only count Old schools for denominator
+                const oldSchools = tree[district].chiefdoms[c].schools.filter(s => s.status !== 'New');
+                dTotal += oldSchools.length;
+                dDone  += oldSchools.filter(s => submitted.has(s.key)).length;
             });
             const dPct  = dTotal > 0 ? Math.round((dDone / dTotal) * 100) : 0;
             const dCol  = dPct >= 80 ? '#28a745' : dPct >= 50 ? '#f0a500' : '#dc3545';
@@ -899,7 +925,7 @@
                 <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 <span class="tg-dist-name">${district}</span>
                 <span class="tg-dist-badge">${chiefdoms.length} chiefdom${chiefdoms.length!==1?'s':''}</span>
-                <span class="tg-dist-badge">${dTotal} schools</span>
+                <span class="tg-dist-badge">${dTotal} schools (Old)</span>
                 <span class="tg-dist-badge" style="background:${dPct>=80?'rgba(40,167,69,.35)':dPct>=50?'rgba(240,165,0,.35)':'rgba(220,53,69,.35)'};border-color:${dCol};">${dPct}%</span>
                 <svg viewBox="0 0 24 24" style="width:12px;height:12px;flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg>
               </div>
@@ -908,7 +934,7 @@
               <div id="${panelId}">
                 <div class="tg-dist-stats">
                   <div class="tg-dist-stat"><div class="tg-dst-v">${chiefdoms.length}</div><div class="tg-dst-l">Chiefdoms</div></div>
-                  <div class="tg-dist-stat"><div class="tg-dst-v">${dTotal}</div><div class="tg-dst-l">Target Schools</div></div>
+                  <div class="tg-dist-stat"><div class="tg-dst-v">${dTotal}</div><div class="tg-dst-l">Target Schools (Old)</div></div>
                   <div class="tg-dist-stat"><div class="tg-dst-v" style="color:#28a745;">${dDone}</div><div class="tg-dst-l">Submitted</div></div>
                   <div class="tg-dist-stat"><div class="tg-dst-v" style="color:#dc3545;">${dTotal-dDone}</div><div class="tg-dst-l">Remaining</div></div>
                 </div>
@@ -918,7 +944,7 @@
                     <thead><tr>
                       <th>#</th>
                       <th>Chiefdom / PHU</th>
-                      <th style="text-align:center;">Target</th>
+                      <th style="text-align:center;">Target (Old)</th>
                       <th style="text-align:center;">Submitted</th>
                       <th style="text-align:center;">Remaining</th>
                       <th style="min-width:160px;">Progress</th>
@@ -927,28 +953,34 @@
                     <tbody>`;
 
             chiefdoms.forEach((chiefdom, ci) => {
-                const schs   = tree[district].chiefdoms[chiefdom].schools;
-                const cTotal = schs.length;
-                const cDone  = schs.filter(s => submitted.has(s.key)).length;
+                const allSchools = tree[district].chiefdoms[chiefdom].schools;
+                // Separate Old and New schools for display
+                const oldSchools = allSchools.filter(s => s.status !== 'New');
+                const newSchools = allSchools.filter(s => s.status === 'New');
+                const cTotal = oldSchools.length;
+                const cDone  = oldSchools.filter(s => submitted.has(s.key)).length;
                 const cPct   = cTotal > 0 ? Math.round((cDone / cTotal) * 100) : 0;
                 const cCol   = cPct >= 80 ? '#28a745' : cPct >= 50 ? '#f0a500' : '#dc3545';
                 const chipsId = `chips-${di}-${ci}`;
 
-                // Show first 5 schools as chips, expandable
-                // Get new schools added in field
-                const _newSchools = (window.getNewSchoolsAdded ? window.getNewSchoolsAdded() : [])
-                    .map(ns => (ns.key||'').toLowerCase());
-
-                const chips = schs.map(s => {
+                // Create chips for all schools (Old ones first, then New ones in blue)
+                const oldChips = oldSchools.map(s => {
                     const done     = submitted.has(s.key);
-                    const isNew    = _newSchools.includes((s.key||'').toLowerCase());
                     const label    = s.name.length > 22 ? s.name.substring(0,20)+'…' : s.name;
-                    const cls      = done ? 'done' : isNew ? 'pend new-school' : 'pend';
-                    const tooltip  = s.name + ' · ' + s.community + (isNew ? ' (NEW — added in field)' : '');
-                    return `<span class="tg-chip ${cls}" title="${tooltip}">${done?'✓ ':''}${label}</span>`;
+                    const tooltip  = s.name + ' · ' + s.community;
+                    return `<span class="tg-chip ${done?'done':'pend'}" title="${tooltip}">${done?'✓ ':''}${label}</span>`;
+                }).join('');
+                
+                const newChips = newSchools.map(s => {
+                    const done     = submitted.has(s.key);
+                    const label    = s.name.length > 22 ? s.name.substring(0,20)+'…' : s.name;
+                    const tooltip  = s.name + ' · ' + s.community + ' (NEW — added to system)';
+                    return `<span class="tg-chip new-added" title="${tooltip}">${done?'✓ ':''}⭐ ${label}</span>`;
                 }).join('');
 
-                // Also add new schools not in CSV target but submitted/added
+                // Also add new schools not in CSV target but submitted/added (from field)
+                const _newSchools = (window.getNewSchoolsAdded ? window.getNewSchoolsAdded() : [])
+                    .map(ns => (ns.key||'').toLowerCase());
                 const newInField = _newSchools.filter(k => {
                     const parts = k.split('|');
                     const d2 = parts[0]||'', c2 = parts[1]||'', p2 = parts[2]||'';
@@ -959,26 +991,36 @@
                     const parts = k.split('|');
                     const nm    = parts[4] || k;
                     const lbl   = nm.length > 22 ? nm.substring(0,20)+'…' : nm;
-                    return `<span class="tg-chip pend new-school" title="${nm} (NEW — added in field)">★ ${lbl}</span>`;
+                    return `<span class="tg-chip new-added" title="${nm} (NEW — added in field)">${done2?'✓ ':''}⭐ ${lbl}</span>`;
                 }).join('');
 
-                // Build PHU sub-rows
+                // Build PHU sub-rows (only count Old schools in PHU totals)
                 const phuMap = {};
-                schs.forEach(s => {
-                    if (!phuMap[s.phu]) phuMap[s.phu] = [];
-                    phuMap[s.phu].push(s);
+                allSchools.forEach(s => {
+                    if (!phuMap[s.phu]) phuMap[s.phu] = { old: [], new: [] };
+                    if (s.status === 'New') {
+                        phuMap[s.phu].new.push(s);
+                    } else {
+                        phuMap[s.phu].old.push(s);
+                    }
                 });
                 const phuKeys = Object.keys(phuMap).sort();
                 const phuSubRows = phuKeys.map((phu, pi) => {
-                    const pSchs  = phuMap[phu];
-                    const pTotal = pSchs.length;
-                    const pDone  = pSchs.filter(s => submitted.has(s.key)).length;
-                    const pPct   = pTotal > 0 ? Math.round((pDone / pTotal) * 100) : 0;
-                    const pCol   = pPct >= 80 ? '#28a745' : pPct >= 50 ? '#f0a500' : '#dc3545';
-                    const pChips = pSchs.map(s => {
+                    const pOld     = phuMap[phu].old;
+                    const pNew     = phuMap[phu].new;
+                    const pTotal   = pOld.length;
+                    const pDone    = pOld.filter(s => submitted.has(s.key)).length;
+                    const pPct     = pTotal > 0 ? Math.round((pDone / pTotal) * 100) : 0;
+                    const pCol     = pPct >= 80 ? '#28a745' : pPct >= 50 ? '#f0a500' : '#dc3545';
+                    const pOldChips = pOld.map(s => {
                         const done = submitted.has(s.key);
                         const lbl  = s.name.length > 20 ? s.name.substring(0,18)+'…' : s.name;
-                        return `<span class="tg-chip ${done?'done':'pend'}" title="${s.name} · ${s.community}">${done?'✓ ':''} ${lbl}</span>`;
+                        return `<span class="tg-chip ${done?'done':'pend'}" title="${s.name} · ${s.community}">${done?'✓ ':''}${lbl}</span>`;
+                    }).join('');
+                    const pNewChips = pNew.map(s => {
+                        const done = submitted.has(s.key);
+                        const lbl  = s.name.length > 20 ? s.name.substring(0,18)+'…' : s.name;
+                        return `<span class="tg-chip new-added" title="${s.name} · ${s.community} (NEW)">${done?'✓ ':''}⭐ ${lbl}</span>`;
                     }).join('');
                     return `<tr style="background:#f8fbff;">
                         <td style="color:#bbb;font-size:10px;padding-left:20px;">└</td>
@@ -995,7 +1037,7 @@
                             <span style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;color:${pCol};white-space:nowrap;">${pPct}%</span>
                           </div>
                         </td>
-                        <td><div class="tg-school-chips">${pChips}</div></td>
+                        <td><div class="tg-school-chips">${pOldChips}${pNewChips}</div></td>
                       </tr>`;
                 }).join('');
 
@@ -1015,7 +1057,7 @@
                             <span style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:${cCol};white-space:nowrap;">${cPct}%</span>
                           </div>
                         </td>
-                        <td style="color:#607080;font-size:10px;">${phuKeys.length} PHU${phuKeys.length!==1?'s':''} · ${cTotal} schools</td>
+                        <td style="color:#607080;font-size:10px;"><div class="tg-school-chips">${oldChips}${newChips}${newInField}</div></td>
                       </tr>
                       ${phuSubRows}`;
             });
