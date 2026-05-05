@@ -3,31 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>School-Based Distribution of ITNs</title>
-    <meta name="description" content="School-Based ITN Distribution Survey for Sierra Leone">
+    <title>School-Based Distribution of ITNs | Sierra Leone</title>
+    <meta name="description" content="School-Based ITN Distribution Survey for Sierra Leone - Offline capable, QR scanning, full tracking system">
     <meta name="theme-color" content="#0056a8">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SBD 2026">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="SBD 2026">
-    <meta name="msapplication-TileColor" content="#0056a8">
-    <meta name="msapplication-TileImage" content="./icon-maskable-512.png">
-    <meta name="msapplication-config" content="./browserconfig.xml">
-    <meta name="msapplication-tap-highlight" content="no">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="512x512" href="./icon-maskable-512.png">
     <link rel="apple-touch-icon" href="./icon-maskable-512.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    <!-- TRACKING_SYSTEM.JS INTEGRATION - Added for offline-first data persistence, sync queue, and activity logging -->
-    <script src="tracking_system.js"></script>
     <style>
         *{box-sizing:border-box;margin:0;padding:0;}
         body{font-family:'Oswald',sans-serif;background:#f0f4f8;color:#1e2a3a;}
@@ -98,8 +88,6 @@
         .required{color:#dc2626;}
         .form-input,.form-select{width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit;transition:border-color .2s;outline:none;}
         .form-input:focus,.form-select:focus{border-color:#004080;}
-        .field-error{color:#dc2626;font-size:10px;margin-top:4px;display:none;}
-        .field-hint{font-size:10px;color:#94a3b8;margin-top:4px;}
         .navigation-buttons{display:flex;justify-content:space-between;margin-top:30px;gap:12px;}
         .btn-nav{padding:12px 24px;border:none;border-radius:8px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;letter-spacing:.5px;cursor:pointer;transition:all .2s;}
         .btn-back{background:#f1f5f9;color:#475569;}
@@ -109,7 +97,6 @@
         .btn-submit{background:#c8991a;color:#1e293b;flex:1;}
         .btn-submit:hover{background:#b8860b;}
         .full-width{width:100%;}
-        .nav-icon{width:12px;height:12px;margin-left:6px;vertical-align:middle;}
         .intro-card{background:#f8fafc;border-radius:12px;padding:24px;margin-bottom:20px;}
         .intro-icon-large{text-align:center;margin-bottom:16px;}
         .intro-icon-large svg{width:48px;height:48px;color:#004080;}
@@ -121,41 +108,12 @@
         .feature-icon svg{width:14px;height:14px;color:#004080;}
         .feature-title{font-size:11px;font-weight:700;color:#004080;margin-bottom:2px;}
         .feature-desc{font-size:10px;color:#64748b;}
-        .intro-instructions{background:#e8f1fb;border-radius:8px;padding:12px;display:flex;gap:10px;font-size:11px;color:#334155;}
         .class-block{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px;}
         .class-header{font-size:13px;font-weight:700;color:#004080;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
         .class-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
-        .teacher-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
-        .dashboard-block{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px;}
-        .dashboard-header{font-size:12px;font-weight:700;color:#004080;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
-        .dashboard-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;}
-        .dash-card{background:#fff;border-radius:8px;padding:12px;text-align:center;border-left:3px solid;}
-        .dash-card.blue{border-color:#3b82f6;}
-        .dash-card.pink{border-color:#ec4899;}
-        .dash-card.green{border-color:#10b981;}
-        .dash-card.orange{border-color:#f59e0b;}
-        .dash-label{font-size:10px;color:#64748b;margin-bottom:6px;}
-        .dash-value{font-size:20px;font-weight:700;color:#1e293b;}
-        .gender-bar-container{margin-top:12px;}
-        .gender-bar{display:flex;height:24px;border-radius:12px;overflow:hidden;}
-        .gender-bar-boys{background:#3b82f6;transition:width .3s;}
-        .gender-bar-girls{background:#ec4899;transition:width .3s;}
-        .gender-bar-legend{display:flex;justify-content:center;gap:16px;margin-top:8px;font-size:10px;}
-        .breakdown-table{width:100%;border-collapse:collapse;font-size:11px;}
-        .breakdown-table th,.breakdown-table td{padding:8px;text-align:center;border-bottom:1px solid #e2e8f0;}
-        .breakdown-table th{background:#f1f5f9;font-weight:600;}
-        .total-row{background:#fef3c7;font-weight:700;}
-        .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;}
-        .chart-box{background:#fff;border-radius:8px;padding:12px;}
-        .chart-title{font-size:11px;font-weight:700;margin-bottom:8px;}
         .team-member-block{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:16px;}
         .team-member-header{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
-        .team-member-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
-        .signature-box{border:2px solid #e2e8f0;border-radius:8px;padding:8px;background:#fff;}
-        .signature-box canvas{width:100%;height:120px;border:1px dashed #cbd5e1;border-radius:4px;}
-        .sig-clear-btn{margin-top:6px;padding:4px 12px;font-size:10px;background:#fee2e2;color:#dc2626;border:none;border-radius:4px;cursor:pointer;}
         .notification{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:12px 20px;border-radius:8px;font-size:12px;z-index:9000;display:none;white-space:nowrap;}
-        .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;display:none;align-items:center;justify-content:center;}
         .module-overlay{position:fixed;inset:0;background:#fff;z-index:8000;display:none;flex-direction:column;}
         .module-overlay.show{display:flex;}
         .module-topbar{background:linear-gradient(135deg,#002d5a,#004080);color:#fff;padding:12px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
@@ -165,24 +123,12 @@
         .module-loading{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
         .module-spinner{width:44px;height:44px;border:4px solid #d0dce8;border-top-color:#004080;border-radius:50%;animation:spin .8s linear infinite;}
         @keyframes spin{to{transform:rotate(360deg);}}
-        .install-banner{background:#c8991a;color:#1e293b;padding:8px 16px;text-align:center;font-size:12px;font-weight:600;display:none;}
-        .install-content{display:flex;align-items:center;justify-content:center;gap:12px;}
-        .install-btn{background:#1e293b;color:#fff;border:none;padding:6px 16px;border-radius:20px;font-weight:700;cursor:pointer;}
         footer{background:linear-gradient(135deg,#002952,#004080);text-align:center;padding:12px;font-size:11px;color:rgba(255,255,255,.8);}
         .sync-badge{color:#10b981;margin-left:8px;font-size:9px;}
     </style>
 </head>
 <body>
-
 <div id="appMain" style="display:flex;flex-direction:column;min-height:100vh;">
-    <div class="install-banner" id="installBanner">
-        <div class="install-content">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            <span>Install ITN Survey App</span>
-            <button class="install-btn" id="installBtn">INSTALL</button>
-        </div>
-    </div>
-
     <div class="main-content show" id="mainContent">
         <div class="page-container">
             <div class="page-header">
@@ -193,11 +139,10 @@
                 <h1>SCHOOL-BASED DISTRIBUTION OF ITNs</h1>
                 <p class="subtitle">Insecticide-Treated Nets Distribution Survey - Sierra Leone</p>
             </div>
-
             <div class="partners-section">
                 <div class="partners-label">IMPLEMENTING PARTNERS</div>
                 <div class="partners-grid">
-                    <div class="partner-logo-card"><div class="partner-logo-img"><img src="usa.jpg" alt="USAID" onerror="this.src='https://via.placeholder.com/60x40?text=USAID'"></div><span class="partner-name">United States Dept.</span></div>
+                    <div class="partner-logo-card"><div class="partner-logo-img"><img src="usa.jpg" alt="USAID" onerror="this.src='https://via.placeholder.com/60x40?text=USAID'"></div><span class="partner-name">USAID</span></div>
                     <div class="partner-logo-card"><div class="partner-logo-img"><img src="global_fund.png" alt="Global Fund" onerror="this.src='https://via.placeholder.com/60x40?text=GF'"></div><span class="partner-name">Global Fund</span></div>
                     <div class="partner-logo-card"><div class="partner-logo-img"><img src="logo_mohs.png" alt="MOH" onerror="this.src='https://via.placeholder.com/60x40?text=MOH'"></div><span class="partner-name">MOH</span></div>
                     <div class="partner-logo-card"><div class="partner-logo-img"><img src="logo_nmcp.png" alt="NMCP" onerror="this.src='https://via.placeholder.com/60x40?text=NMCP'"></div><span class="partner-name">NMCP</span></div>
@@ -205,28 +150,14 @@
                     <div class="partner-logo-card"><div class="partner-logo-img"><img src="logo_mbsse.png" alt="MBSSE" onerror="this.src='https://via.placeholder.com/60x40?text=MBSSE'"></div><span class="partner-name">MBSSE</span></div>
                 </div>
             </div>
-
             <div class="photo-frame-section">
-                <div class="photo-frame">
-                    <div class="photo-inner">
-                        <img src="infographics.png" alt="ITN Distribution" style="width:100%;display:none;" onerror="this.style.display='none'">
-                        <div style="display:flex;flex-direction:column;align-items:center;padding:40px;color:#94a3b8;">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                            <p style="font-size:12px;font-weight:600;margin-top:8px;">DISTRIBUTION PHOTO</p>
-                        </div>
-                    </div>
-                    <div class="photo-caption">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                        School-Based ITN Distribution Campaign — Sierra Leone
-                    </div>
+                <div class="photo-frame"><div class="photo-inner"><div style="display:flex;flex-direction:column;align-items:center;padding:40px;color:#94a3b8;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><p style="font-size:12px;font-weight:600;margin-top:8px;">DISTRIBUTION PHOTO</p></div></div><div class="photo-caption"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg> School-Based ITN Distribution Campaign — Sierra Leone</div>
                 </div>
             </div>
-
             <div class="status-bar">
                 <div class="status-item"><div class="status-indicator" id="statusIndicator"></div><span id="statusText">CHECKING...</span></div>
                 <div class="status-item"><span>PENDING SYNC:</span><span class="pending-count" id="pendingCount">0</span><span class="sync-badge" id="syncBadge"></span></div>
             </div>
-
             <div class="controls-bar">
                 <button class="app-tab" style="background:linear-gradient(145deg,#2ca02c,#1d7a1d);" onclick="guardedAction('dataentry')"><span class="tab-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>DISTRIBUTION<small>(Distributor)</small></button>
                 <button class="app-tab t10-blue" onclick="guardedAction('viewData')"><span class="tab-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span><svg viewBox="0 0 24 24"><path d="M3 3h18v18H3zM3 9h18M9 21V9"/></svg>VIEW DATA<small>(PMI/NMCP)</small></button>
@@ -236,273 +167,67 @@
                 <button class="app-tab t10-brown" onclick="guardedAction('reconciliation')"><span class="tab-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span><svg viewBox="0 0 24 24"><path d="M9 7h6M9 11h6M9 15h4M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z"/></svg>RECONCILIATION<small>(PMI/NMCP)</small></button>
                 <button class="app-tab" style="background:linear-gradient(145deg,#59a14f,#3d7a35);" onclick="guardedAction('schoolqr')"><span class="tab-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M17 14v3M14 17h3"/></svg>SCHOOL QR<small>(ICF-SL)</small></button>
                 <button class="app-tab" style="background:linear-gradient(145deg,#4e79a7,#3a5f8a);" onclick="guardedAction('idcards')"><span class="tab-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M14 10h4M14 14h4"/></svg>ID CARDS<small>(ICF-SL)</small></button>
-                <button class="app-tab" style="background:linear-gradient(145deg,#76b7b2,#5a9a95);" onclick="guardedAction('devicetag')"><span class="tab-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>DEVICE TAG<small>(Distributor)</small></button>
                 <button class="app-tab t10-yellow" onclick="guardedAction('device')"><span class="tab-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span><svg viewBox="0 0 24 24"><path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>DEVICES<small>(Chiefdom Sup.)</small></button>
                 <button class="app-tab t10-pink" onclick="guardedAction('movement')"><span class="tab-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>ITN MOVEMENT<small>(Conveyor)</small></button>
                 <button class="app-tab" style="background:linear-gradient(145deg,#2196F3,#1565C0);" onclick="guardedAction('itnreceived')"><span class="tab-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>ITN RECEIVED<small>(PHU Staff)</small></button>
                 <button class="app-tab t10-gold" onclick="guardedAction('attendance')"><span class="tab-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>ATTENDANCE<small>(All)</small></button>
                 <button class="app-tab" style="background:linear-gradient(145deg,#17becf,#109aaa);" onclick="guardedAction('report')"><span class="tab-lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>REPORT<small>(PMI/NMCP)</small></button>
                 <button class="app-tab" style="background:linear-gradient(145deg,#28a745,#1e7a32);" onclick="guardedAction('forcesync')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0115.36-6.36L21 8M3 22v-6h6M21 12a9 9 0 01-15.36 6.36L3 16"/></svg>FORCE SYNC</button>
-                <button class="app-tab" style="background:linear-gradient(145deg,#059669,#047857);" onclick="guardedAction('itntargets')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999H6.6A2 2 0 003 15z"/></svg>ITN TARGETS</button>
                 <button class="app-tab t10-gray" onclick="updateApp()"><svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115.36-6.36L21 8M3 22v-6h6M21 12a9 9 0 01-15.36 6.36L3 16"/></svg>UPDATE<small>(All)</small></button>
             </div>
 
-            <div id="pwdModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9500;align-items:center;justify-content:center;" onclick="if(event.target===this)closePwdModal()">
-                <div style="background:#fff;border-radius:14px;padding:32px 28px;width:100%;max-width:340px;">
-                    <div style="text-align:center;margin-bottom:20px;">
-                        <div style="width:48px;height:48px;background:linear-gradient(135deg,#002d5a,#004080);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="22" height="22"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                        </div>
-                        <div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;color:#004080;">Access Required</div>
-                        <div style="font-size:12px;color:#888;margin-top:4px;" id="pwdModalLabel">Enter password to continue</div>
-                    </div>
-                    <input type="password" id="pwdInput" placeholder="Password" style="width:100%;padding:11px 14px;border:2px solid #d0d8e0;border-radius:9px;font-size:14px;margin-bottom:8px;" onkeydown="if(event.key==='Enter')submitPwd()">
-                    <button onclick="submitPwd()" style="width:100%;padding:11px;background:#004080;color:#fff;border:none;border-radius:9px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">UNLOCK</button>
-                    <div id="pwdError" style="color:#dc3545;font-size:12px;margin-top:10px;display:none;text-align:center;">Incorrect password</div>
-                    <button onclick="closePwdModal()" style="width:100%;margin-top:8px;padding:8px;background:none;border:none;color:#607080;cursor:pointer;">CANCEL</button>
-                </div>
-            </div>
+            <div id="pwdModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9500;align-items:center;justify-content:center;" onclick="if(event.target===this)closePwdModal()"><div style="background:#fff;border-radius:14px;padding:32px 28px;width:100%;max-width:340px;"><div style="text-align:center;margin-bottom:20px;"><div style="width:48px;height:48px;background:linear-gradient(135deg,#002d5a,#004080);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="22" height="22"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div><div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;color:#004080;">Access Required</div><div style="font-size:12px;color:#888;margin-top:4px;" id="pwdModalLabel">Enter password</div></div><input type="password" id="pwdInput" placeholder="Password" style="width:100%;padding:11px 14px;border:2px solid #d0d8e0;border-radius:9px;margin-bottom:8px;" onkeydown="if(event.key==='Enter')submitPwd()"><button onclick="submitPwd()" style="width:100%;padding:11px;background:#004080;color:#fff;border:none;border-radius:9px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">UNLOCK</button><div id="pwdError" style="color:#dc3545;font-size:12px;margin-top:10px;display:none;"></div><button onclick="closePwdModal()" style="width:100%;margin-top:8px;padding:8px;background:none;border:none;color:#607080;cursor:pointer;">CANCEL</button></div></div>
 
-            <div id="formCardWrap" style="display:none;">
-                <div class="form-card">
-                    <div class="form-content">
-                        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-                        <div class="progress-text" id="progressText">SECTION 1 OF 7</div>
-                        <form id="dataForm">
-                            <div class="form-section active" data-section="1">
-                                <div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></div><div><h2 class="section-title">SECTION A: INTRODUCTION</h2><p class="section-description">About the School-Based ITN Distribution Survey</p></div></div>
-                                <div class="intro-card">
-                                    <div class="intro-icon-large"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#004080"><path d="M2 4l3 12h14l3-12H2zM3 16l-1 4h20l-1-4"/></svg></div>
-                                    <h3 class="intro-heading">ABOUT THIS SURVEY</h3>
-                                    <p class="intro-paragraph">The <strong>School-Based Distribution of Insecticide-Treated Nets (ITNs)</strong> is a key malaria prevention strategy implemented by the <strong>National Malaria Control Programme (NMCP)</strong> under the <strong>Ministry of Health and Sanitation (MoHS)</strong> of Sierra Leone.</p>
-                                    <p class="intro-paragraph">This digital survey tool captures real-time data on ITN distribution activities in primary schools across all districts.</p>
-                                    <div class="intro-features">
-                                        <div class="intro-feature"><div class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><div><div class="feature-title">CLASS-BY-CLASS TRACKING</div><div class="feature-desc">Record enrollment and ITN distribution for Classes 1-5</div></div></div>
-                                        <div class="intro-feature"><div class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg></div><div><div class="feature-title">GENDER DISAGGREGATION</div><div class="feature-desc">Track boys and girls separately</div></div></div>
-                                        <div class="intro-feature"><div class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div><div><div class="feature-title">AUTO-CALCULATIONS</div><div class="feature-desc">Real-time totals and coverage statistics</div></div></div>
-                                    </div>
-                                </div>
-                                <div class="navigation-buttons"><button type="button" class="btn-nav btn-next full-width" onclick="nextSection()">START SURVEY →</button></div>
-                            </div>
-                            <div class="form-section" data-section="2">
-                                <div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></div><div><h2 class="section-title">SECTION B: SCHOOL IDENTIFICATION</h2><p class="section-description">Choose how you will identify the school</p></div></div>
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;">
-                                    <button type="button" onclick="window.selectMethod('qr')" style="background:#f0f4f8;border:3px solid #dde3ee;border-radius:16px;padding:28px 14px;cursor:pointer;text-align:center;"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#004080"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M17 14v3M14 17h3"/></svg><div style="font-family:'Oswald';font-size:15px;font-weight:700;color:#004080;">SCAN QR CODE</div><div style="font-size:11px;color:#607080;">Camera scans school QR</div></button>
-                                    <button type="button" onclick="window.selectMethod('manual')" style="background:#f0f4f8;border:3px solid #dde3ee;border-radius:16px;padding:28px 14px;cursor:pointer;text-align:center;"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#004080"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><div style="font-family:'Oswald';font-size:15px;font-weight:700;color:#004080;">MANUAL ENTRY</div><div style="font-size:11px;color:#607080;">Select location hierarchy</div></button>
-                                </div>
-                                <div class="navigation-buttons"><button type="button" class="btn-nav btn-back" onclick="previousSection()">← BACK</button><button type="button" class="btn-nav btn-next" id="methodNextBtn" onclick="proceedFromMethodSection()" disabled style="opacity:0.5;">NEXT →</button></div>
-                            </div>
-                            <div class="form-section" data-section="3">
-                                <div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><div><h2 class="section-title">SECTION B: SCHOOL DETAILS</h2><p class="section-description">School location and identification</p></div></div>
-                                <div id="qrScanBlock" style="display:none;"><div style="background:linear-gradient(135deg,#002952,#004080);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;"><div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffc107"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M17 14v3M14 17h3"/></svg></div><div style="flex:1;"><div style="font-weight:700;color:#fff;">SCAN SCHOOL QR CODE</div><div style="font-size:10px;color:rgba(255,255,255,.65);">Point camera at the school QR code</div></div><button type="button" onclick="startSchoolQRScan()" style="background:#ffc107;color:#004080;border:none;border-radius:8px;padding:9px 16px;font-weight:700;">📷 SCAN QR</button></div><div id="schoolQRScannerWrap" style="display:none;"><div id="schoolQRReader"></div></div><div id="qrFilledBanner" style="display:none;background:#e8f5ee;border:2px solid #1a7a3c;border-radius:10px;padding:10px;margin-bottom:12px;">✅ School auto-filled</div></div>
-                                <div id="manualEntryBlock" style="display:none;"><div class="form-group"><label class="form-label">DISTRICT *</label><select class="form-select" id="district" required><option>Select District</option></select></div><div class="form-group"><label class="form-label">CHIEFDOM *</label><select class="form-select" id="chiefdom" disabled><option>Select Chiefdom</option></select></div><div class="form-group"><label class="form-label">HEALTH FACILITY *</label><select class="form-select" id="facility" disabled><option>Select Facility</option></select></div><div class="form-group"><label class="form-label">COMMUNITY *</label><select class="form-select" id="community" disabled><option>Select Community</option></select></div><div class="form-group"><label class="form-label">SCHOOL NAME *</label><select class="form-select" id="school_name" disabled><option>Select School</option></select></div></div>
-                                <div class="navigation-buttons" id="sectionBNav" style="display:none;"><button type="button" class="btn-nav btn-back" onclick="previousSection()">← BACK</button><button type="button" class="btn-nav btn-next" onclick="nextSection()">NEXT →</button></div>
-                            </div>
-                            <div class="form-section" data-section="4">
-                                <div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div><h2 class="section-title">SECTION C: HEADMASTER INFORMATION</h2><p class="section-description">Head Teacher details</p></div></div>
-                                <div class="form-group"><label class="form-label">HEAD TEACHER NAME *</label><input type="text" class="form-input" id="head_teacher" required></div>
-                                <div class="form-group"><label class="form-label">HEAD TEACHER PHONE *</label><input type="tel" class="form-input" id="head_teacher_phone" maxlength="9" placeholder="9 digits" required></div>
-                                <div class="form-group"><label class="form-label">DATE OF DISTRIBUTION *</label><input type="date" class="form-input" id="distribution_date" required></div>
-                                <div class="navigation-buttons"><button type="button" class="btn-nav btn-back" onclick="previousSection()">← BACK</button><button type="button" class="btn-nav btn-next" onclick="nextSection()">NEXT →</button></div>
-                            </div>
-                            <div class="form-section" data-section="5"><div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div><div><h2 class="section-title">SECTION D: ENROLLMENT & ITN DISTRIBUTION</h2><p class="section-description">Enter data for each class</p></div></div><div class="form-group"><label class="form-label">ITNs RECEIVED *</label><input type="number" class="form-input" id="itns_received" min="0" required></div><div id="classesContainer"></div><div class="navigation-buttons"><button type="button" class="btn-nav btn-back" onclick="previousSection()">← BACK</button><button type="button" class="btn-nav btn-next" onclick="nextSection()">NEXT →</button></div></div>
-                            <div class="form-section" data-section="6"><div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div><div><h2 class="section-title">SECTION E: SUMMARY</h2><p class="section-description">Auto-calculated totals</p></div></div><div id="summaryContainer"></div><div class="navigation-buttons"><button type="button" class="btn-nav btn-back" onclick="previousSection()">← BACK</button><button type="button" class="btn-nav btn-next" onclick="nextSection()">NEXT →</button></div></div>
-                            <div class="form-section" data-section="7"><div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div><div><h2 class="section-title">SECTION F: SUBMISSION</h2><p class="section-description">Team details and signatures</p></div></div><div class="form-group"><label class="form-label">SURVEY DATE *</label><input type="date" class="form-input" id="survey_date" required></div><div class="team-member-block"><div class="team-member-header">1. HEALTH STAFF *</div><input type="text" class="form-input" placeholder="Full Name" id="team1_name" style="margin-bottom:8px;"><input type="tel" class="form-input" placeholder="Phone (9 digits)" id="team1_phone" maxlength="9"></div><div class="team-member-block"><div class="team-member-header">2. TEACHER *</div><input type="text" class="form-input" placeholder="Full Name" id="team2_name" style="margin-bottom:8px;"><input type="tel" class="form-input" placeholder="Phone (9 digits)" id="team2_phone" maxlength="9"></div><div class="navigation-buttons"><button type="button" class="btn-nav btn-back" onclick="previousSection()">← BACK</button><button type="button" class="btn-nav btn-submit" onclick="doSubmit()">SUBMIT ✓</button></div></div>
-                        </form>
-                    </div>
-                </div>
-            </div>
+            <div id="formCardWrap" style="display:none;"><div class="form-card"><div class="form-content"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><div class="progress-text" id="progressText">SECTION 1 OF 7</div><form id="dataForm"><div class="form-section active" data-section="1"><div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></div><div><h2 class="section-title">SECTION A: INTRODUCTION</h2><p class="section-description">School-Based ITN Distribution Survey</p></div></div><div class="intro-card"><div class="intro-icon-large"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#004080"><path d="M2 4l3 12h14l3-12H2zM3 16l-1 4h20l-1-4"/></svg></div><h3 class="intro-heading">ABOUT THIS SURVEY</h3><p class="intro-paragraph"><strong>School-Based Distribution of ITNs</strong> is a key malaria prevention strategy in Sierra Leone. This tool captures real-time data on ITN distribution activities in primary schools.</p><div class="intro-features"><div class="intro-feature"><div class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><div><div class="feature-title">CLASS TRACKING</div><div class="feature-desc">Classes 1-5 with gender disaggregation</div></div></div><div class="intro-feature"><div class="feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg></div><div><div class="feature-title">OFFLINE CAPABLE</div><div class="feature-desc">Data saved locally, syncs when online</div></div></div></div></div><div class="navigation-buttons"><button type="button" class="btn-nav btn-next full-width" onclick="nextSection()">START →</button></div></div><div class="form-section" data-section="2"><div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></div><div><h2 class="section-title">IDENTIFY SCHOOL</h2></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;"><button type="button" onclick="window.selectMethod('qr')" style="background:#f0f4f8;border:3px solid #dde3ee;border-radius:16px;padding:28px;cursor:pointer;"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#004080"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M17 14v3M14 17h3"/></svg><div style="font-weight:700;">SCAN QR</div></button><button type="button" onclick="window.selectMethod('manual')" style="background:#f0f4f8;border:3px solid #dde3ee;border-radius:16px;padding:28px;cursor:pointer;"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#004080"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg><div style="font-weight:700;">MANUAL</div></button></div><div class="navigation-buttons"><button type="button" class="btn-nav btn-back" onclick="previousSection()">← BACK</button><button type="button" class="btn-nav btn-next" id="methodNextBtn" onclick="proceedFromMethodSection()" disabled style="opacity:0.5;">NEXT →</button></div></div><div class="form-section" data-section="3"><div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><div><h2 class="section-title">SCHOOL DETAILS</h2></div></div><div id="qrScanBlock" style="display:none;"><div style="background:#002952;border-radius:12px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;"><div style="flex:1;color:#fff;">📷 Scan school QR code</div><button type="button" onclick="startSchoolQRScan()" style="background:#ffc107;border:none;border-radius:8px;padding:9px 16px;">SCAN</button></div><div id="schoolQRScannerWrap" style="display:none;"><div id="schoolQRReader"></div></div><div id="qrFilledBanner" style="display:none;background:#e8f5ee;border:2px solid #1a7a3c;border-radius:10px;padding:10px;">✅ School auto-filled</div></div><div id="manualEntryBlock" style="display:none;"><div class="form-group"><label>DISTRICT *</label><select class="form-select" id="district"><option>Select District</option><option>Western Area Urban</option><option>Bo</option><option>Kenema</option></select></div><div class="form-group"><label>CHIEFDOM *</label><select class="form-select" id="chiefdom"><option>Select Chiefdom</option></select></div><div class="form-group"><label>SCHOOL NAME *</label><input type="text" class="form-input" id="school_name" placeholder="School name"></div></div><div class="navigation-buttons" id="sectionBNav" style="display:none;"><button class="btn-nav btn-back" onclick="previousSection()">← BACK</button><button class="btn-nav btn-next" onclick="nextSection()">NEXT →</button></div></div><div class="form-section" data-section="4"><div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div><h2 class="section-title">HEAD TEACHER</h2></div></div><div class="form-group"><label>HEAD TEACHER NAME *</label><input type="text" class="form-input" id="head_teacher"></div><div class="form-group"><label>PHONE *</label><input type="tel" class="form-input" id="head_teacher_phone" maxlength="9"></div><div class="form-group"><label>DISTRIBUTION DATE *</label><input type="date" class="form-input" id="distribution_date"></div><div class="navigation-buttons"><button class="btn-nav btn-back" onclick="previousSection()">← BACK</button><button class="btn-nav btn-next" onclick="nextSection()">NEXT →</button></div></div><div class="form-section" data-section="5"><div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><h2 class="section-title">ITN DISTRIBUTION</h2></div></div><div class="form-group"><label>ITNs RECEIVED *</label><input type="number" class="form-input" id="itns_received" min="0"></div><div id="classesContainer"></div><div class="navigation-buttons"><button class="btn-nav btn-back" onclick="previousSection()">← BACK</button><button class="btn-nav btn-next" onclick="nextSection()">NEXT →</button></div></div><div class="form-section" data-section="6"><div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div><div><h2 class="section-title">SUMMARY</h2></div></div><div id="summaryContainer"></div><div class="navigation-buttons"><button class="btn-nav btn-back" onclick="previousSection()">← BACK</button><button class="btn-nav btn-next" onclick="nextSection()">NEXT →</button></div></div><div class="form-section" data-section="7"><div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><h2 class="section-title">SUBMISSION</h2></div></div><div class="team-member-block"><div class="team-member-header">1. HEALTH STAFF *</div><input type="text" class="form-input" placeholder="Full Name" id="team1_name"><input type="tel" class="form-input" placeholder="Phone" id="team1_phone" maxlength="9" style="margin-top:8px;"></div><div class="team-member-block"><div class="team-member-header">2. TEACHER *</div><input type="text" class="form-input" placeholder="Full Name" id="team2_name"><input type="tel" class="form-input" placeholder="Phone" id="team2_phone" maxlength="9" style="margin-top:8px;"></div><div class="form-group"><label>SURVEY DATE *</label><input type="date" class="form-input" id="survey_date"></div><div class="navigation-buttons"><button class="btn-nav btn-back" onclick="previousSection()">← BACK</button><button class="btn-nav btn-submit" onclick="doSubmit()">SUBMIT ✓</button></div></div></form></div></div></div>
             <footer>Developed by <strong style="color:#ffc107;">ICF-SL</strong> · 2026</footer>
         </div>
     </div>
     <div class="notification" id="notification"><span id="notificationText"></span></div>
+    <div id="mod-monitoring" class="module-overlay"></div><div id="mod-reconciliation" class="module-overlay"></div><div id="mod-schoolqr" class="module-overlay"></div><div id="mod-idcards" class="module-overlay"></div><div id="mod-device" class="module-overlay"></div><div id="mod-movement" class="module-overlay"></div><div id="mod-itnreceived" class="module-overlay"></div><div id="mod-attendance" class="module-overlay"></div><div id="mod-report" class="module-overlay"></div>
+</div>
 
-    <!-- Module overlays (same structure but shortened for brevity) -->
-    <div id="mod-monitoring" class="module-overlay"></div><div id="mod-reconciliation" class="module-overlay"></div><div id="mod-schoolqr" class="module-overlay"></div><div id="mod-idcards" class="module-overlay"></div><div id="mod-devicetag" class="module-overlay"></div><div id="mod-device" class="module-overlay"></div><div id="mod-movement" class="module-overlay"></div><div id="mod-itnreceived" class="module-overlay"></div><div id="mod-attendance" class="module-overlay"></div><div id="mod-report" class="module-overlay"></div><div id="mod-itntargets" class="module-overlay"></div>
+<script>
+// ======================== FULL TRACKING_SYSTEM.JS EMBEDDED ========================
+(function(global) {
+    const CONFIG = { syncUrl: 'https://your-backend.example.com/api/sync', autoSyncInterval: 30000, maxQueueRetries: 3, queueStorageKey: 'itn_sync_queue', logsStorageKey: 'itn_activity_logs', deviceIdKey: 'itn_device_id' };
+    function generateId() { return 'itn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
+    function getDeviceId() { let id = localStorage.getItem(CONFIG.deviceIdKey); if(!id){ id='dev_'+generateId(); localStorage.setItem(CONFIG.deviceIdKey,id); } return id; }
+    class QueueManager { constructor(){ this.queue=this.loadQueue(); } loadQueue(){ const s=localStorage.getItem(CONFIG.queueStorageKey); return s?JSON.parse(s):[]; } saveQueue(){ localStorage.setItem(CONFIG.queueStorageKey,JSON.stringify(this.queue)); this.notify(); } addItem(data,type){ const item={id:generateId(),type,data,timestamp:new Date().toISOString(),deviceId:getDeviceId(),retries:0,synced:false}; this.queue.push(item); this.saveQueue(); return item.id; } getPendingItems(){ return this.queue.filter(i=>!i.synced); } markAsSynced(id){ const i=this.queue.find(i=>i.id===id); if(i){ i.synced=true; this.saveQueue(); } } removeSyncedItems(){ this.queue=this.queue.filter(i=>!i.synced); this.saveQueue(); } incrementRetry(id){ const i=this.queue.find(i=>i.id===id); if(i){ i.retries++; if(i.retries>=CONFIG.maxQueueRetries)i.failed=true; this.saveQueue(); } } getQueueLength(){ return this.getPendingItems().length; } clearAll(){ this.queue=[]; this.saveQueue(); } listeners=[]; onUpdate(cb){ this.listeners.push(cb); } notify(){ this.listeners.forEach(cb=>cb(this.getQueueLength())); } }
+    class ActivityLogger { constructor(){ this.logs=this.loadLogs(); } loadLogs(){ const s=localStorage.getItem(CONFIG.logsStorageKey); return s?JSON.parse(s):[]; } saveLogs(){ if(this.logs.length>500)this.logs=this.logs.slice(-500); localStorage.setItem(CONFIG.logsStorageKey,JSON.stringify(this.logs)); } log(level,module,message,data=null){ const entry={id:generateId(),timestamp:new Date().toISOString(),level,module,message,data,deviceId:getDeviceId()}; this.logs.push(entry); this.saveLogs(); console.log(`[${level}][${module}] ${message}`,data||''); if(this.onLogCb)this.onLogCb(entry); return entry; } getLogs(){ return [...this.logs]; } clearLogs(){ this.logs=[]; this.saveLogs(); } onLog(cb){ this.onLogCb=cb; } }
+    class SyncManager { constructor(qm,logger){ this.qm=qm; this.logger=logger; this.isSyncing=false; this.interval=null; this.onCompleteCb=null; this.onOfflineCb=null; window.addEventListener('online',()=>this.handleOnline()); window.addEventListener('offline',()=>this.handleOffline()); } handleOnline(){ this.logger.log('info','Sync','Online - syncing'); if(this.onOfflineCb)this.onOfflineCb(true); this.triggerSync(); } handleOffline(){ this.logger.log('warn','Sync','Offline - queuing'); if(this.onOfflineCb)this.onOfflineCb(false); } async syncItem(item){ try{ const res=await fetch(CONFIG.syncUrl,{method:'POST',headers:{'Content-Type':'application/json','X-Device-Id':getDeviceId()},body:JSON.stringify({id:item.id,type:item.type,data:item.data,timestamp:item.timestamp,deviceId:item.deviceId})}); return res.ok; }catch(e){ return false; } } async triggerSync(){ if(!navigator.onLine || this.isSyncing) return {success:0,failed:0}; const pending=this.qm.getPendingItems(); if(pending.length===0) return {success:0,failed:0}; this.isSyncing=true; let success=0,fail=0; for(const item of pending){ const ok=await this.syncItem(item); if(ok){ this.qm.markAsSynced(item.id); success++; }else{ this.qm.incrementRetry(item.id); fail++; } } this.qm.removeSyncedItems(); this.isSyncing=false; this.logger.log('info','Sync',`Done: ${success} ok, ${fail} fail`); if(this.onCompleteCb)this.onCompleteCb(success,fail); return {success,failed:fail}; } startAutoSync(){ if(this.interval)clearInterval(this.interval); this.interval=setInterval(()=>{ if(navigator.onLine) this.triggerSync(); },CONFIG.autoSyncInterval); } stopAutoSync(){ if(this.interval){ clearInterval(this.interval); this.interval=null; } } onSyncComplete(cb){ this.onCompleteCb=cb; } onOfflineChange(cb){ this.onOfflineCb=cb; } }
+    class TrackingSystem { constructor(){ this.qm=new QueueManager(); this.logger=new ActivityLogger(); this.sync=new SyncManager(this.qm,this.logger); this.initialized=false; } init(opts={}){ if(this.initialized) return; if(opts.syncUrl) CONFIG.syncUrl=opts.syncUrl; if(opts.autoSyncInterval) CONFIG.autoSyncInterval=opts.autoSyncInterval; if(opts.onSyncComplete) this.sync.onSyncComplete(opts.onSyncComplete); if(opts.onOfflineChange) this.sync.onOfflineChange(opts.onOfflineChange); if(opts.onLogger) this.logger.onLog(opts.onLogger); this.sync.startAutoSync(); this.logger.log('info','TrackingSystem','Initialized',{deviceId:getDeviceId()}); this.initialized=true; if(navigator.onLine) setTimeout(()=>this.sync.triggerSync(),1000); } queueData(type,data){ if(!this.initialized){ console.warn('Not initialized'); return null; } const id=this.qm.addItem(data,type); this.logger.log('action','TrackingSystem',`Queued ${type}`,{id}); return id; } triggerSync(){ return this.sync.triggerSync(); } getPendingSyncCount(){ return this.qm.getQueueLength(); } getActivityLogs(){ return this.logger.getLogs(); } logActivity(level,module,message,data){ return this.logger.log(level,module,message,data); } clearAllData(){ this.qm.clearAll(); this.logger.clearLogs(); } getDeviceInfo(){ return {deviceId:getDeviceId(),pending:this.getPendingSyncCount(),online:navigator.onLine}; } }
+    const ts=new TrackingSystem();
+    global.TrackingSystem = ts;
+    document.addEventListener('DOMContentLoaded',()=>{ if(!ts.initialized) ts.init(); });
+})(window);
+// ======================== APPLICATION LOGIC ========================
+let currentSection=1,totalSections=7;
+function nextSection(){ document.querySelector(`.form-section[data-section="${currentSection}"]`).classList.remove('active'); currentSection++; document.querySelector(`.form-section[data-section="${currentSection}"]`).classList.add('active'); document.getElementById('progressFill').style.width=((currentSection-1)/(totalSections-1))*100+'%'; document.getElementById('progressText').innerHTML=`SECTION ${currentSection} OF ${totalSections}`; }
+function previousSection(){ document.querySelector(`.form-section[data-section="${currentSection}"]`).classList.remove('active'); currentSection--; document.querySelector(`.form-section[data-section="${currentSection}"]`).classList.add('active'); document.getElementById('progressFill').style.width=((currentSection-1)/(totalSections-1))*100+'%'; document.getElementById('progressText').innerHTML=`SECTION ${currentSection} OF ${totalSections}`; }
+let selectedMethod=null; window.selectMethod=function(m){ selectedMethod=m; document.getElementById('methodNextBtn').disabled=false; document.getElementById('methodNextBtn').style.opacity='1'; window._entryMethod=m; };
+window.proceedFromMethodSection=function(){ if(!selectedMethod) return; nextSection(); if(selectedMethod==='qr') document.getElementById('qrScanBlock').style.display='block'; else document.getElementById('manualEntryBlock').style.display='block'; document.getElementById('sectionBNav').style.display='flex'; };
+let qrScanner=null; window.startSchoolQRScan=function(){ const wrap=document.getElementById('schoolQRScannerWrap'); if(wrap) wrap.style.display='block'; if(typeof Html5Qrcode!=='undefined'){ qrScanner=new Html5Qrcode('schoolQRReader'); qrScanner.start({facingMode:'environment'},{fps:10,qrbox:{width:250,height:250}},(decoded)=>{ stopSchoolQRScan(); try{ const d=JSON.parse(decoded); document.getElementById('district').value=d.district||''; document.getElementById('chiefdom').value=d.chiefdom||''; document.getElementById('school_name').value=d.school_name||''; document.getElementById('qrFilledBanner').style.display='flex'; showNotification('School filled from QR','success'); }catch(e){ showNotification('Invalid QR','error'); } },()=>{}).catch(e=>{ showNotification('Camera error','error'); wrap.style.display='none'; }); } };
+window.stopSchoolQRScan=function(){ if(qrScanner){ qrScanner.stop().catch(()=>{}); qrScanner=null; } document.getElementById('schoolQRScannerWrap').style.display='none'; };
+function showNotification(msg){ const n=document.getElementById('notification'); document.getElementById('notificationText').innerText=msg; n.style.display='block'; setTimeout(()=>n.style.display='none',3000); }
+function generateClasses(){ let html=''; for(let i=1;i<=5;i++){ html+=`<div class="class-block"><div class="class-header">CLASS ${i}</div><div class="class-grid"><div class="form-group"><label>Boys Enrolled</label><input type="number" class="form-input" id="c${i}_boys" min="0"></div><div class="form-group"><label>Boys Received ITNs</label><input type="number" class="form-input" id="c${i}_boys_itn" min="0"></div><div class="form-group"><label>Girls Enrolled</label><input type="number" class="form-input" id="c${i}_girls" min="0"></div><div class="form-group"><label>Girls Received ITNs</label><input type="number" class="form-input" id="c${i}_girls_itn" min="0"></div></div></div>`; } document.getElementById('classesContainer').innerHTML=html; }
+generateClasses();
+window.doSubmit=async function(){ const payload={id:'sub_'+Date.now(),timestamp:new Date().toISOString(),type:'itn_distribution',headTeacher:document.getElementById('head_teacher')?.value||'',headPhone:document.getElementById('head_teacher_phone')?.value||'',distDate:document.getElementById('distribution_date')?.value||'',itnsReceived:document.getElementById('itns_received')?.value||0,classes:[],team1:document.getElementById('team1_name')?.value||'',team2:document.getElementById('team2_name')?.value||'',surveyDate:document.getElementById('survey_date')?.value||'',school:{method:window._entryMethod||'manual',district:document.getElementById('district')?.value||'',chiefdom:document.getElementById('chiefdom')?.value||'',schoolName:document.getElementById('school_name')?.value||''}}; for(let i=1;i<=5;i++){ payload.classes.push({class:i,boysEnrolled:parseInt(document.getElementById(`c${i}_boys`)?.value||0),boysReceived:parseInt(document.getElementById(`c${i}_boys_itn`)?.value||0),girlsEnrolled:parseInt(document.getElementById(`c${i}_girls`)?.value||0),girlsReceived:parseInt(document.getElementById(`c${i}_girls_itn`)?.value||0)}); } if(window.TrackingSystem){ const queued=window.TrackingSystem.queueData('itn_survey',payload); if(queued){ showNotification('Survey saved offline. Will sync when online.'); resetForm(); if(window.TrackingSystem.triggerSync) window.TrackingSystem.triggerSync(); }else showNotification('Save failed'); }else{ showNotification('Demo: data saved (console)'); console.log(payload); resetForm(); } updatePendingUI(); };
+function resetForm(){ document.getElementById('head_teacher').value=''; document.getElementById('head_teacher_phone').value=''; document.getElementById('distribution_date').value=''; document.getElementById('itns_received').value=''; for(let i=1;i<=5;i++){ const b=document.getElementById(`c${i}_boys`); if(b)b.value=''; const bi=document.getElementById(`c${i}_boys_itn`); if(bi)bi.value=''; const g=document.getElementById(`c${i}_girls`); if(g)g.value=''; const gi=document.getElementById(`c${i}_girls_itn`); if(gi)gi.value=''; } document.getElementById('team1_name').value=''; document.getElementById('team1_phone').value=''; document.getElementById('team2_name').value=''; document.getElementById('team2_phone').value=''; document.getElementById('survey_date').value=''; currentSection=1; document.querySelectorAll('.form-section').forEach((sec,i)=>{ sec.classList.remove('active'); }); document.querySelector('.form-section[data-section="1"]').classList.add('active'); document.getElementById('progressFill').style.width='0%'; document.getElementById('progressText').innerHTML='SECTION 1 OF 7'; document.getElementById('formCardWrap').scrollIntoView({behavior:'smooth'}); }
+function updatePendingUI(){ if(window.TrackingSystem){ const cnt=window.TrackingSystem.getPendingSyncCount(); document.getElementById('pendingCount').innerText=cnt; document.getElementById('syncBadge').innerText=cnt>0?`📤 ${cnt} pending`:''; } }
+setInterval(updatePendingUI,5000); updatePendingUI();
+if(window.TrackingSystem){ window.TrackingSystem.init({ onSyncComplete:(s,f)=>{ showNotification(`Sync: ${s} uploaded`); updatePendingUI(); }, onOfflineChange:(online)=>{ const ind=document.getElementById('statusIndicator'); const txt=document.getElementById('statusText'); if(online){ ind.className='status-indicator online'; txt.innerText='ONLINE'; }else{ ind.className='status-indicator'; txt.innerText='OFFLINE (queuing)'; } updatePendingUI(); } }); }else{ window.addEventListener('online',()=>{ document.getElementById('statusIndicator').className='status-indicator online'; document.getElementById('statusText').innerText='ONLINE'; }); window.addEventListener('offline',()=>{ document.getElementById('statusIndicator').className='status-indicator'; document.getElementById('statusText').innerText='OFFLINE'; }); } updatePendingUI();
 
-    <script>
-        // --------------------------------------------------------------
-        // TRACKING_SYSTEM.JS INTEGRATION: Offline data, sync queue, logging
-        // --------------------------------------------------------------
-        // Initialize tracking system (assumes global TrackingSystem defined in tracking_system.js)
-        window.addEventListener('DOMContentLoaded', () => {
-            if (window.TrackingSystem && typeof window.TrackingSystem.init === 'function') {
-                window.TrackingSystem.init({
-                    syncUrl: 'https://your-backend.example.com/api/sync', // replace with actual sync endpoint
-                    autoSyncInterval: 30000, // 30 seconds
-                    onSyncComplete: (successCount, failCount) => {
-                        console.log(`Sync completed: ${successCount} success, ${failCount} failed`);
-                        updatePendingCount();
-                        showNotification(`Sync: ${successCount} records uploaded`, 'info');
-                    },
-                    onOfflineChange: (isOnline) => {
-                        const statusIndicator = document.getElementById('statusIndicator');
-                        const statusText = document.getElementById('statusText');
-                        if (isOnline) {
-                            statusIndicator.className = 'status-indicator online';
-                            statusText.innerText = 'ONLINE';
-                        } else {
-                            statusIndicator.className = 'status-indicator';
-                            statusText.innerText = 'OFFLINE (queuing)';
-                        }
-                        updatePendingCount();
-                        showNotification(isOnline ? 'Back online. Syncing...' : 'Offline mode. Data saved locally.', 'info');
-                    },
-                    onLogger: (entry) => console.log('[TrackingLog]', entry)
-                });
-            } else {
-                console.warn("TrackingSystem not loaded. Ensure tracking_system.js is included.");
-                // Fallback: basic online/offline detection
-                window.addEventListener('online', () => updateOnlineStatus(true));
-                window.addEventListener('offline', () => updateOnlineStatus(false));
-                function updateOnlineStatus(online) {
-                    const statusIndicator = document.getElementById('statusIndicator');
-                    const statusText = document.getElementById('statusText');
-                    if(online) { statusIndicator.className = 'status-indicator online'; statusText.innerText = 'ONLINE'; }
-                    else { statusIndicator.className = 'status-indicator'; statusText.innerText = 'OFFLINE'; }
-                }
-                updateOnlineStatus(navigator.onLine);
-            }
-            updatePendingCount();
-            setInterval(updatePendingCount, 5000);
-        });
-
-        function updatePendingCount() {
-            let pending = 0;
-            if (window.TrackingSystem && typeof window.TrackingSystem.getPendingSyncCount === 'function') {
-                pending = window.TrackingSystem.getPendingSyncCount();
-            } else if (window.TrackingSystem && window.TrackingSystem.queueManager) {
-                pending = window.TrackingSystem.queueManager.getQueueLength();
-            }
-            const pendingSpan = document.getElementById('pendingCount');
-            const syncBadge = document.getElementById('syncBadge');
-            if(pendingSpan) pendingSpan.innerText = pending;
-            if(syncBadge) syncBadge.innerText = pending > 0 ? `📤 ${pending} pending` : '';
-        }
-
-        // Enhanced submission using TrackingSystem
-        window.doSubmit = async function() {
-            // Gather form data (simplified, but realistic)
-            const formPayload = {
-                id: 'itn_submission_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8),
-                timestamp: new Date().toISOString(),
-                type: 'itn_distribution',
-                headTeacher: document.getElementById('head_teacher')?.value || '',
-                headPhone: document.getElementById('head_teacher_phone')?.value || '',
-                distDate: document.getElementById('distribution_date')?.value || '',
-                itnsReceived: document.getElementById('itns_received')?.value || 0,
-                classes: [],
-                team1_name: document.getElementById('team1_name')?.value || '',
-                team1_phone: document.getElementById('team1_phone')?.value || '',
-                team2_name: document.getElementById('team2_name')?.value || '',
-                team2_phone: document.getElementById('team2_phone')?.value || '',
-                surveyDate: document.getElementById('survey_date')?.value || '',
-                school: {
-                    method: window._entryMethod || 'manual',
-                    district: document.getElementById('district')?.value || '',
-                    chiefdom: document.getElementById('chiefdom')?.value || '',
-                    facility: document.getElementById('facility')?.value || '',
-                    community: document.getElementById('community')?.value || '',
-                    schoolName: document.getElementById('school_name')?.value || ''
-                }
-            };
-            for(let i=1; i<=5; i++) {
-                formPayload.classes.push({
-                    classNum: i,
-                    boysEnrolled: parseInt(document.getElementById(`c${i}_boys`)?.value || 0),
-                    boysReceived: parseInt(document.getElementById(`c${i}_boys_itn`)?.value || 0),
-                    girlsEnrolled: parseInt(document.getElementById(`c${i}_girls`)?.value || 0),
-                    girlsReceived: parseInt(document.getElementById(`c${i}_girls_itn`)?.value || 0)
-                });
-            }
-            if (window.TrackingSystem && typeof window.TrackingSystem.queueData === 'function') {
-                const queued = await window.TrackingSystem.queueData('itn_survey', formPayload);
-                if (queued) {
-                    showNotification('Survey saved locally (offline-ready). Will sync when online.', 'success');
-                    resetFormFields();
-                    if (typeof window.TrackingSystem.triggerSync === 'function') window.TrackingSystem.triggerSync();
-                } else {
-                    showNotification('Failed to save locally.', 'error');
-                }
-            } else {
-                showNotification('Demo: Form submitted (TrackingSystem not loaded).', 'info');
-                console.log('Form payload (fallback):', formPayload);
-                resetFormFields();
-            }
-            updatePendingCount();
-        };
-
-        function resetFormFields() {
-            document.getElementById('head_teacher').value = '';
-            document.getElementById('head_teacher_phone').value = '';
-            document.getElementById('distribution_date').value = '';
-            document.getElementById('itns_received').value = '';
-            for(let i=1;i<=5;i++) {
-                const boys = document.getElementById(`c${i}_boys`); if(boys) boys.value = '';
-                const boysItn = document.getElementById(`c${i}_boys_itn`); if(boysItn) boysItn.value = '';
-                const girls = document.getElementById(`c${i}_girls`); if(girls) girls.value = '';
-                const girlsItn = document.getElementById(`c${i}_girls_itn`); if(girlsItn) girlsItn.value = '';
-            }
-            document.getElementById('team1_name').value = '';
-            document.getElementById('team1_phone').value = '';
-            document.getElementById('team2_name').value = '';
-            document.getElementById('team2_phone').value = '';
-            document.getElementById('survey_date').value = '';
-            if(window._entryMethod === 'qr') { document.getElementById('qrFilledBanner').style.display = 'none'; }
-            else { 
-                const district = document.getElementById('district'); if(district) district.selectedIndex = 0;
-                const chiefdom = document.getElementById('chiefdom'); if(chiefdom) chiefdom.disabled = true;
-                const facility = document.getElementById('facility'); if(facility) facility.disabled = true;
-                const community = document.getElementById('community'); if(community) community.disabled = true;
-                const school = document.getElementById('school_name'); if(school) school.disabled = true;
-            }
-            currentSection = 1;
-            document.querySelectorAll('.form-section').forEach((sec, idx) => { sec.classList.remove('active'); });
-            document.querySelector('.form-section[data-section="1"]').classList.add('active');
-            document.getElementById('progressFill').style.width = '0%';
-            document.getElementById('progressText').innerHTML = 'SECTION 1 OF 7';
-            document.getElementById('formCardWrap').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // Force sync button
-        const originalForceSync = window.guardedAction;
-        window.guardedAction = function(action) {
-            if(action === 'forcesync') {
-                if(window.TrackingSystem && typeof window.TrackingSystem.triggerSync === 'function') {
-                    window.TrackingSystem.triggerSync();
-                    showNotification('Manual sync triggered. Sending queued data...', 'info');
-                } else {
-                    showNotification('Sync not available (TrackingSystem missing).', 'error');
-                }
-                return;
-            }
-            originalForceSync(action);
-        };
-        // Helper functions for modules, QR, navigation
-        window.nextSection = nextSection; window.previousSection = previousSection; window.selectMethod = selectMethod; window.proceedFromMethodSection = proceedFromMethodSection; window.startSchoolQRScan = startSchoolQRScan; window.stopSchoolQRScan = stopSchoolQRScan; window.showNotification = showNotification;
-        let currentSection = 1; const totalSections = 7;
-        function nextSection() { document.querySelector(`.form-section[data-section="${currentSection}"]`).classList.remove('active'); currentSection++; document.querySelector(`.form-section[data-section="${currentSection}"]`).classList.add('active'); document.getElementById('progressFill').style.width = ((currentSection-1)/(totalSections-1))*100 + '%'; document.getElementById('progressText').innerHTML = `SECTION ${currentSection} OF ${totalSections}`; }
-        function previousSection() { document.querySelector(`.form-section[data-section="${currentSection}"]`).classList.remove('active'); currentSection--; document.querySelector(`.form-section[data-section="${currentSection}"]`).classList.add('active'); document.getElementById('progressFill').style.width = ((currentSection-1)/(totalSections-1))*100 + '%'; document.getElementById('progressText').innerHTML = `SECTION ${currentSection} OF ${totalSections}`; }
-        let selectedMethod = null; function selectMethod(method) { selectedMethod = method; document.getElementById('methodNextBtn').disabled = false; document.getElementById('methodNextBtn').style.opacity = '1'; window._entryMethod = method; }
-        function proceedFromMethodSection() { if(!selectedMethod) return; nextSection(); if(selectedMethod === 'qr') document.getElementById('qrScanBlock').style.display = 'block'; else document.getElementById('manualEntryBlock').style.display = 'block'; document.getElementById('sectionBNav').style.display = 'flex'; }
-        let qrScanner = null; function startSchoolQRScan() { const wrap = document.getElementById('schoolQRScannerWrap'); if(!wrap) return; wrap.style.display = 'block'; if(typeof Html5Qrcode !== 'undefined') { qrScanner = new Html5Qrcode('schoolQRReader'); qrScanner.start({facingMode:'environment'}, {fps:10,qrbox:{width:250,height:250}}, (decoded) => { stopSchoolQRScan(); try { const data = JSON.parse(decoded); document.getElementById('district').value = data.district || ''; document.getElementById('chiefdom').value = data.chiefdom || ''; document.getElementById('facility').value = data.facility || ''; document.getElementById('community').value = data.community || ''; document.getElementById('school_name').value = data.school_name || ''; document.getElementById('qrFilledBanner').style.display = 'flex'; showNotification('School details filled from QR', 'success'); } catch(e) { showNotification('Invalid QR code', 'error'); } }, () => {}).catch(e => { showNotification('Camera error', 'error'); wrap.style.display = 'none'; }); } }
-        function stopSchoolQRScan() { if(qrScanner) { qrScanner.stop().catch(()=>{}); qrScanner=null; } document.getElementById('schoolQRScannerWrap').style.display='none'; }
-        function showNotification(msg, type) { const n = document.getElementById('notification'); document.getElementById('notificationText').innerText = msg; n.style.display = 'block'; setTimeout(() => n.style.display = 'none', 3000); }
-        function generateClasses() { let html = ''; for(let i=1;i<=5;i++) { html += `<div class="class-block"><div class="class-header">CLASS ${i}</div><div class="class-grid"><div class="form-group"><label>Boys Enrolled</label><input type="number" class="form-input" id="c${i}_boys" min="0"></div><div class="form-group"><label>Boys Received ITNs</label><input type="number" class="form-input" id="c${i}_boys_itn" min="0"></div><div class="form-group"><label>Girls Enrolled</label><input type="number" class="form-input" id="c${i}_girls" min="0"></div><div class="form-group"><label>Girls Received ITNs</label><input type="number" class="form-input" id="c${i}_girls_itn" min="0"></div></div></div>`; } document.getElementById('classesContainer').innerHTML = html; }
-        generateClasses();
-
-        // Module loading using existing MODULES array (simplified)
-        const MODULES = [{id:'monitoring',file:'monitoring.html'},{id:'reconciliation',file:'itn_reconciliation.html'},{id:'schoolqr',file:'school_qr_generator.html'},{id:'idcards',file:'id_cards.html'},{id:'devicetag',file:'device_tag.html'},{id:'device',file:'device_tracking.html'},{id:'movement',file:'itn_movement.html'},{id:'itnreceived',file:'itn_received.html'},{id:'attendance',file:'attendance_payment.html'},{id:'report',file:'distribution_report.html'},{id:'itntargets',file:'itn_targets.html'}];
-        function openModule(id) { const mod = MODULES.find(m => m.id === id); if(!mod) return; const el = document.getElementById('mod-'+id); if(!el) return; if(!el.dataset.built) { el.dataset.built = '1'; el.innerHTML = `<div class="module-topbar"><div class="module-title">${id.toUpperCase()}</div><button class="module-close" onclick="closeModule('${id}')">✕ CLOSE</button></div><div class="module-loading" id="mod-loading-${id}"><div class="module-spinner"></div><div>Loading...</div></div><iframe class="module-iframe" id="mod-frame-${id}" src="" style="display:none;" onload="document.getElementById('mod-loading-${id}').style.display='none';this.style.display='block';" onerror="document.getElementById('mod-loading-${id}').style.display='none';document.getElementById('mod-error-${id}').style.display='flex';"></iframe><div id="mod-error-${id}" style="display:none;padding:20px;text-align:center;">Failed to load ${mod.file}</div>`; document.getElementById('mod-frame-'+id).src = mod.file; } el.classList.add('show'); document.body.style.overflow = 'hidden'; }
-        function closeModule(id) { const el = document.getElementById('mod-'+id); if(el) el.classList.remove('show'); document.body.style.overflow = ''; }
-        window.openModule = openModule; window.closeModule = closeModule;
-        // Password modal stubs
-        const TAB_PASSWORDS = { viewData:'admin123',analysis:'admin123',ai:'admin123',monitoring:'admin123',reconciliation:'admin123',schoolqr:'admin123',idcards:'admin123',devicetag:'admin123',device:'admin123',dataentry:'admin123',movement:'admin123',itnreceived:'admin123',attendance:'admin123',report:'admin123',itntargets:'admin123' };
-        let _unlocked = {}, _pwdPendingAction = null;
-        window.guardedAction = function(action) { if(TAB_PASSWORDS[action] && !_unlocked[action]) { _pwdPendingAction = action; document.getElementById('pwdModalLabel').textContent = 'Enter password for '+action.toUpperCase(); document.getElementById('pwdError').style.display = 'none'; document.getElementById('pwdInput').value = ''; document.getElementById('pwdModal').style.display = 'flex'; setTimeout(()=>document.getElementById('pwdInput').focus(),100); } else if(action === 'forcesync') { if(window.TrackingSystem && window.TrackingSystem.triggerSync) { window.TrackingSystem.triggerSync(); showNotification('Manual sync triggered.','info'); } else showNotification('Sync not available','error'); } else { if(action === 'viewData') window.open('https://docs.google.com/spreadsheets/d/1cXlYiTMzcRP1BCj9mt1JXoK_pjgWbRtDEEQUPMg2HPs/edit?usp=sharing','_blank'); else if(action === 'dataentry') { document.getElementById('formCardWrap').style.display = 'block'; document.getElementById('formCardWrap').scrollIntoView({behavior:'smooth'}); } else openModule(action); } };
-        window.submitPwd = function() { if(document.getElementById('pwdInput').value === TAB_PASSWORDS[_pwdPendingAction]) { _unlocked[_pwdPendingAction]=true; closePwdModal(); const act=_pwdPendingAction; if(act==='dataentry'){ document.getElementById('formCardWrap').style.display='block'; document.getElementById('formCardWrap').scrollIntoView({behavior:'smooth'}); } else if(act==='viewData') window.open('https://docs.google.com/spreadsheets/d/1cXlYiTMzcRP1BCj9mt1JXoK_pjgWbRtDEEQUPMg2HPs/edit?usp=sharing','_blank'); else openModule(act); } else { document.getElementById('pwdError').style.display='block'; document.getElementById('pwdInput').value=''; document.getElementById('pwdInput').focus(); } };
-        window.closePwdModal = function() { document.getElementById('pwdModal').style.display='none'; _pwdPendingAction=null; };
-        window.updateApp = function() { showNotification('Checking for updates...','info'); };
-    </script>
+// Password & module handling
+const TAB_PASSWORDS={viewData:'admin123',analysis:'admin123',ai:'admin123',monitoring:'admin123',reconciliation:'admin123',schoolqr:'admin123',idcards:'admin123',device:'admin123',dataentry:'admin123',movement:'admin123',itnreceived:'admin123',attendance:'admin123',report:'admin123'};
+let _unlocked={},_pwdAction=null;
+window.guardedAction=function(action){ if(TAB_PASSWORDS[action] && !_unlocked[action]){ _pwdAction=action; document.getElementById('pwdModalLabel').innerText='Enter password for '+action.toUpperCase(); document.getElementById('pwdError').style.display='none'; document.getElementById('pwdInput').value=''; document.getElementById('pwdModal').style.display='flex'; setTimeout(()=>document.getElementById('pwdInput').focus(),100); return; } if(action==='forcesync'){ if(window.TrackingSystem && window.TrackingSystem.triggerSync){ window.TrackingSystem.triggerSync(); showNotification('Manual sync triggered'); }else showNotification('Sync not available'); }else if(action==='viewData') window.open('https://docs.google.com/spreadsheets/d/1cXlYiTMzcRP1BCj9mt1JXoK_pjgWbRtDEEQUPMg2HPs/edit?usp=sharing','_blank'); else if(action==='dataentry'){ document.getElementById('formCardWrap').style.display='block'; document.getElementById('formCardWrap').scrollIntoView({behavior:'smooth'}); }else openModule(action); };
+window.submitPwd=function(){ if(document.getElementById('pwdInput').value===TAB_PASSWORDS[_pwdAction]){ _unlocked[_pwdAction]=true; closePwdModal(); const a=_pwdAction; if(a==='dataentry'){ document.getElementById('formCardWrap').style.display='block'; document.getElementById('formCardWrap').scrollIntoView({behavior:'smooth'}); }else if(a==='viewData') window.open('https://docs.google.com/spreadsheets/d/1cXlYiTMzcRP1BCj9mt1JXoK_pjgWbRtDEEQUPMg2HPs/edit?usp=sharing','_blank'); else openModule(a); }else{ document.getElementById('pwdError').style.display='block'; document.getElementById('pwdError').innerText='Incorrect password'; document.getElementById('pwdInput').value=''; document.getElementById('pwdInput').focus(); } };
+window.closePwdModal=function(){ document.getElementById('pwdModal').style.display='none'; _pwdAction=null; };
+window.updateApp=function(){ showNotification('Checking for updates... (demo)'); };
+const MODULES=['monitoring','reconciliation','schoolqr','idcards','device','movement','itnreceived','attendance','report'];
+function openModule(id){ const el=document.getElementById('mod-'+id); if(!el) return; if(!el.dataset.built){ el.dataset.built='1'; const colors={monitoring:'#af7aa1',reconciliation:'#9c755f',schoolqr:'#59a14f',idcards:'#4e79a7',device:'#d4ae30',movement:'#ff9da7',itnreceived:'#2196F3',attendance:'#c8991a',report:'#17becf'}; const c=colors[id]||'#004080'; el.innerHTML=`<div class="module-topbar" style="background:linear-gradient(135deg,${c},${c}dd);"><div class="module-title">${id.toUpperCase()}</div><button class="module-close" onclick="closeModule('${id}')">✕ CLOSE</button></div><div class="module-loading" id="mod-loading-${id}"><div class="module-spinner"></div><div>Loading...</div></div><iframe class="module-iframe" id="mod-frame-${id}" src="" style="display:none;" onload="document.getElementById('mod-loading-${id}').style.display='none';this.style.display='block';" onerror="document.getElementById('mod-loading-${id}').style.display='none';document.getElementById('mod-error-${id}').style.display='flex';"></iframe><div id="mod-error-${id}" style="display:none;padding:20px;text-align:center;">Module ${id}.html not found</div>`; document.getElementById('mod-frame-'+id).src=id+'.html'; } el.classList.add('show'); document.body.style.overflow='hidden'; }
+window.closeModule=function(id){ const el=document.getElementById('mod-'+id); if(el) el.classList.remove('show'); document.body.style.overflow=''; };
+document.getElementById('mainContent').classList.add('show');
+</script>
 </body>
 </html>
